@@ -14,7 +14,7 @@ from collections import deque, namedtuple
 import scipy.stats as stats
 
 # For visualization
-from gym.wrappers.monitoring import video_recorder
+from gymnasium.wrappers.monitoring import video_recorder
 from IPython.display import HTML
 from IPython import display
 import glob
@@ -61,13 +61,13 @@ class QNetwork(nn.Module):
 # --------------------------
 DDQN = False             # DDQN = False for DQN and True for Double DQN
 BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 64         # minibatch size
+BATCH_SIZE = 256         # minibatch size
 #BATCH_SIZE = 128         # minibatch size
 GAMMA = 0.99            # discount factor
-TAU = 1e-3              # for soft update of target parameters
+TAU = 1e-2              # for soft update of target parameters
 #TAU = 0.1
-LR = 5e-4               # learning rate
-#LR = 5e-3               # learning rate
+# LR = 5e-4               # learning rate
+LR = 5e-3               # learning rate
 UPDATE_EVERY = 4        # how often to update the network
 #UPDATE_EVERY = 8        # how often to update the network
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -90,7 +90,7 @@ class Agent():
         """
         self.state_size = state_size
         self.action_size = action_size
-        self.seed = random.seed(seed)
+        self.seed = 42 #random.seed(seed)
 
         # Q-Network
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
@@ -200,7 +200,7 @@ class Agent():
                     action = agent.act(state)
                     state, reward, done, *extra_vars = env.step(action)
                     reward_acum = reward_acum + reward
-                    if done or reward_acum <= -200:
+                    if done or reward_acum <= -250:
                         rewards.append(reward_acum)
                         break
 
@@ -245,13 +245,13 @@ class ReplayBuffer:
         """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
 
-        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device)
-        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).long().to(device)
-        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device)
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device, non_blocking=True)
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).long().to(device, non_blocking=True)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device, non_blocking=True)
         next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(
-            device)
+            device, non_blocking=True)
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(
-            device)
+            device, non_blocking=True)
 
         return (states, actions, rewards, next_states, dones)
 
@@ -262,7 +262,7 @@ class ReplayBuffer:
 # ----------------
 # Training Process
 # ----------------
-def dqn(n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def dqn(n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
 
     Params
@@ -305,8 +305,8 @@ def dqn(n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.99
             score_avg_list.append(score_avg)
             score_interval_list.append(score_interval)
 
-        if np.mean(scores_window) >= 200.0:
-            #print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode,np.mean(scores_window)))
+        if np.mean(scores_window) >= 250.0:
+            print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode,np.mean(scores_window)))
             score_avg, score_interval = agent.validation(num_evaluations=30)
             print(f'\tValidation Min:Avg:Max \t{score_interval[0]:.2f}:\t{score_avg:.2f}:\t{score_interval[1]:.2f}')
             episodes_list.append(i_episode)
@@ -317,9 +317,11 @@ def dqn(n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.99
 
     return scores, episodes_list, score_avg_list, score_interval_list
 
-
-agent = Agent(state_size=8, action_size=4, seed=0)
+# device = torch.device("mps")
+print(device)
+agent = Agent(state_size=8, action_size=4, seed=42)
 scores, episodes_list, score_avg_list, score_interval_list = dqn()
+
 
 # --------------------------
 # Plot the learning progress
@@ -361,6 +363,6 @@ def show_video_of_model(agent, env_name):
         state, reward, done, *extra_vars = env.step(action)
     env.close()
 
-agent = Agent(state_size=8, action_size=4, seed=0)
+# agent = Agent(state_size=8, action_size=4, seed=42)
 show_video_of_model(agent, 'LunarLander-v2')
 
