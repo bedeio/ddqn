@@ -59,15 +59,15 @@ class QNetwork(nn.Module):
 # --------------------------
 # Define some hyperparameter
 # --------------------------
-DDQN = False             # DDQN = False for DQN and True for Double DQN
+DDQN = True             # DDQN = False for DQN and True for Double DQN
 BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 256         # minibatch size
+BATCH_SIZE = 128         # minibatch size
 #BATCH_SIZE = 128         # minibatch size
 GAMMA = 0.99            # discount factor
-TAU = 1e-2              # for soft update of target parameters
+TAU = 1e-3              # for soft update of target parameters
 #TAU = 0.1
 # LR = 5e-4               # learning rate
-LR = 5e-3               # learning rate
+LR = 5e-4               # learning rate
 UPDATE_EVERY = 4        # how often to update the network
 #UPDATE_EVERY = 8        # how often to update the network
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -93,7 +93,10 @@ class Agent():
         self.seed = 42 #random.seed(seed)
 
         # Q-Network
+        # from ddt import DDT
+        # self.qnetwork_local = DDT(alpha=1, input_dim=8, output_dim=4, leaves=32, is_value=True, weights=None, comparators=None)
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
+        # self.qnetwork_target = DDT(alpha=1, input_dim=8, output_dim=4, leaves=32, is_value=True, weights=None, comparators=None)
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
 
@@ -317,7 +320,6 @@ def dqn(n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.99
 
     return scores, episodes_list, score_avg_list, score_interval_list
 
-# device = torch.device("mps")
 print(device)
 agent = Agent(state_size=8, action_size=4, seed=42)
 scores, episodes_list, score_avg_list, score_interval_list = dqn()
