@@ -33,14 +33,14 @@ from dqn import QNetwork
 # Define some hyperparameter
 # --------------------------
 DDQN = True             # DDQN = False for DQN and True for Double DQN
-BUFFER_SIZE = int(1e5)  # replay buffer size
+BUFFER_SIZE = int(2e5)  # replay buffer size
 BATCH_SIZE = 128         # minibatch size
 #BATCH_SIZE = 128         # minibatch size
-GAMMA = 0.96            # discount factor
+GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 #TAU = 0.1
 # LR = 5e-4               # learning rate
-LR = 5e-4               # learning rate
+LR = 1e-3               # learning rate
 UPDATE_EVERY = 4        # how often to update the network
 #UPDATE_EVERY = 8        # how often to update the network
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -49,7 +49,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # ----------------
 # Training Process
 # ----------------
-def dqn(n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def dqn(agent, n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
 
     Params
@@ -86,7 +86,7 @@ def dqn(n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.99
 
         if i_episode % 100 == 0:
             print('\r',tipo,'Training   Episode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
-            score_avg, score_interval = agent.validation(num_evaluations=30)
+            score_avg, score_interval = agent.validation(num_evaluations=5)
             print(f'\tValidation (Min,Avg,Max): \t{score_interval[0]:.2f},\t{score_avg:.2f},\t{score_interval[1]:.2f}')
             episodes_list.append(i_episode)
             score_avg_list.append(score_avg)
@@ -94,6 +94,7 @@ def dqn(n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.99
 
         if np.mean(scores_window) >= 250.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode,np.mean(scores_window)))
+            # score_avg, score_interval = agent.validation(num_evaluations=30)
             score_avg, score_interval = agent.validation(num_evaluations=30)
             print(f'\tValidation Min:Avg:Max \t{score_interval[0]:.2f}:\t{score_avg:.2f}:\t{score_interval[1]:.2f}')
             episodes_list.append(i_episode)
@@ -140,7 +141,7 @@ def show_video_of_model(agent, env_name):
     # Animate it with Video
     # ---------------------
     env = gym.make(env_name, render_mode="human")
-    agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
+    #agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
     state = np.array(env.reset()[0])
     done = False
     while not done:
@@ -151,10 +152,11 @@ def show_video_of_model(agent, env_name):
 
 
 if __name__ == '__main__':
+    # env = gym.make('LunarLander-v2', render_mode="human")
     env = gym.make('LunarLander-v2')
-    print('Running on device:', device)
-    agent = Agent(env, state_size=8, action_size=4, seed=42)
-    scores, episodes_list, score_avg_list, score_interval_list = dqn()
+    # print('Running on device:', device)
+    agent = Agent(env, state_size=8, action_size=4, seed=42, GAMMA=GAMMA, TAU=TAU, LR=LR, UPDATE_EVERY=UPDATE_EVERY, BATCH_SIZE=BATCH_SIZE, BUFFER_SIZE=BUFFER_SIZE, DDQN=DDQN)
+    scores, episodes_list, score_avg_list, score_interval_list = dqn(agent)
     # agent = Agent(state_size=8, action_size=4, seed=42)
     show_video_of_model(agent, 'LunarLander-v2')
 

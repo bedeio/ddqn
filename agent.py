@@ -41,6 +41,8 @@ class Agent():
         self.BUFFER_SIZE = BUFFER_SIZE
         self.DDQN = DDQN
 
+        self.steps = 0
+
         # Q-Network
         # from ddt import DDT
         # self.qnetwork_local = DDT(alpha=1, input_dim=8, output_dim=4, leaves=32, is_value=True, weights=None, comparators=None)
@@ -115,13 +117,15 @@ class Agent():
         q_expected = self.qnetwork_local(states).gather(1, actions)
 
         ### Loss calculation (we used Mean squared error)
-        loss = F.mse_loss(q_expected, q_targets)
+        # loss = F.mse_loss(q_expected, q_targets)
+        loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.5)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
         # ------------------- update target network ------------------- #
         self.soft_update(self.qnetwork_local, self.qnetwork_target, self.TAU)
+        # self.hard_update(self.qnetwork_local, self.qnetwork_target)
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
@@ -135,6 +139,19 @@ class Agent():
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+
+    def hard_update(self, local_model, target_model):
+        """Hard update model parameters.
+        θ_target = θ_local
+
+        Params
+        ======
+            local_model (PyTorch model): weights will be copied from
+            target_model (PyTorch model): weights will be copied to
+        """
+        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+            target_param.data.copy_(local_param.data)
+
 
     # ----------------------------------------------------------
     # Validation Process do Agent
