@@ -167,9 +167,9 @@ class Agent():
                 reward_acum = 0
                 while not done:
                     action = self.act(state)
-                    state, reward, done, *extra_vars = self.env.step(action)
+                    state, reward, terminated, truncated, info = self.env.step(action)
                     reward_acum = reward_acum + reward
-                    if done or reward_acum <= -250:
+                    if terminated or truncated or reward_acum <= -250:
                         rewards.append(reward_acum)
                         break
 

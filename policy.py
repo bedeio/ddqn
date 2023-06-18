@@ -8,7 +8,6 @@ from torch.distributions import Categorical
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 from ddt import DDT
-from sdt import SDT
 
 class ActorCriticNet(nn.Module):
     def __init__(self):
@@ -16,8 +15,8 @@ class ActorCriticNet(nn.Module):
         hidden_size = 128
         self.affine = nn.Linear(8, hidden_size)
         
-        # self.action_layer = DDT(alpha=1, input_dim=hidden_size, output_dim=4, leaves=64, is_value=True, weights=None, comparators=None)
-        self.action_layer = nn.Linear(hidden_size, 4)
+        self.action_layer = DDT(alpha=1, input_dim=hidden_size, output_dim=4, leaves=32, is_value=True, weights=None, comparators=None)
+        # self.action_layer = nn.Linear(hidden_size, 4)
         self.value_layer = nn.Linear(hidden_size, 1)
         
         self.logprobs = []
@@ -57,7 +56,7 @@ class ActorCriticNet(nn.Module):
         # advantages = rewards - state_vals
         # # advantages = (advantages - advantages.mean()) / (advantages.std())
         # action_loss = -logprobs * advantages
-        # value_loss = F.huber_loss(state_vals, rewards)
+        # value_loss = F.smooth_l1_loss(state_vals, rewards, reduction="none")
         
         # return value_loss.sum() + action_loss.sum()
     
@@ -68,14 +67,14 @@ class ActorCriticNet(nn.Module):
             dis_reward = reward + gamma * dis_reward
             rewards.insert(0, dis_reward)
 
-        rewards = torch.tensor(rewards)
+        rewards = torch.tensor(rewards).float()
         rewards = (rewards - rewards.mean()) / (rewards.std())
         
         loss = 0
         for logprob, value, reward in zip(self.logprobs, self.state_values, rewards):
-            advantage = reward  - value.item()
+            advantage = reward - value.item()
             action_loss = -logprob * advantage
-            value_loss = F.smooth_l1_loss(value, reward)
+            value_loss = F.smooth_l1_loss(value, reward.view(-1))
             loss += (action_loss + value_loss)   
         return loss
     
@@ -93,7 +92,7 @@ def train():
 
     render = False
     gamma = 0.99
-    lr = 0.01
+    lr = 0.005
     random_seed = 42
     
     torch.manual_seed(random_seed)
@@ -128,7 +127,7 @@ def train():
         #if i_episode > 999:
         #    torch.save(policy.state_dict(), './preTrained/LunarLander_{}_{}_{}.pth'.format(lr, betas[0], betas[1]))
         
-        if running_reward > 4000:
+        if running_reward > 6000:
             # torch.save(policy.state_dict(), './preTrained/LunarLander_{}.pth'.format(lr))
             print("########## Solved! ##########")
             # test(name='LunarLander_{}_{}_{}.pth'.format(lr, betas[0], betas[1]))

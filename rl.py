@@ -25,8 +25,11 @@ DEBUG = 5
 
 log = print
 
+counter = 0
+
 def get_rollout(env, policy, render):
-    obs, done = np.array(env.reset()), False
+    done = False
+    obs = np.array(env.reset()[0])
     rollout = []
 
     while not done:
@@ -35,12 +38,18 @@ def get_rollout(env, policy, render):
             env.unwrapped.render()
 
         # Action
+        # global counter
+        # counter += 1
+        # print(counter)
+        # print("Predicting...")
         act = policy.predict(np.array([obs]))[0]
 
         # Step
-        next_obs, rew, done, info = env.step(act)
+        next_obs, rew, terminated, truncated, info = env.step(act)
+        done = terminated or truncated
 
         # Rollout (s, a, r)
+        # print("Rollowt")
         rollout.append((obs, act, rew))
 
         # Update (and remove LazyFrames)
@@ -78,15 +87,15 @@ class TransformerPolicy:
     def predict(self, obss):
         return self.policy.predict(np.array([self.state_transformer(obs) for obs in obss]))
 
-def test_policy(env, policy, state_transformer, n_test_rollouts):
-    wrapped_student = TransformerPolicy(policy, state_transformer)
+def test_policy(env, policy, n_test_rollouts):
+    print("-- Testing policy")
     cum_rew = 0.0
     for i in range(n_test_rollouts):
-        student_trace = get_rollout(env, wrapped_student, False)
+        student_trace = get_rollout(env, policy, False)
         cum_rew += sum((rew for _, _, rew in student_trace))
     return cum_rew / n_test_rollouts
 
-def identify_best_policy(env, policies, state_transformer, n_test_rollouts):
+def identify_best_policy(env, policies, n_test_rollouts):
     log('Initial policy count: {}'.format(len(policies)), INFO)
     # cut policies by half on each iteration
     while len(policies) > 1:
@@ -101,9 +110,9 @@ def identify_best_policy(env, policies, state_transformer, n_test_rollouts):
         new_policies = []
         for i in range(n_policies):
             policy, rew = policies[i]
-            new_rew = test_policy(env, policy, state_transformer, n_test_rollouts)
+            new_rew = test_policy(env, policy, n_test_rollouts)
             new_policies.append((policy, new_rew))
-            log('Reward update: {} -> {}'.format(rew, new_rew), INFO)
+            log('Reward update: {} -> {}'.format(rew, new_rew))
 
         policies = new_policies
 
@@ -140,29 +149,28 @@ def get_action_sequences(env, policy, seq_len, n_rollouts):
 
     return seqs_sorted
 
-def train_dagger(env, teacher, student, state_transformer, max_iters, n_batch_rollouts, max_samples, train_frac, is_reweight, n_test_rollouts):
+def train_dagger(env, teacher, student, max_iters, n_batch_rollouts, max_samples, train_frac, is_reweight, n_test_rollouts):
     # Step 0: Setup
     obss, acts, qs = [], [], []
     students = []
-    wrapped_student = TransformerPolicy(student, state_transformer)
     
     # Step 1: Generate some supervised traces into the buffer
     trace = get_rollouts(env, teacher, False, n_batch_rollouts)
-    obss.extend((state_transformer(obs) for obs, _, _ in trace))
+    obss.extend((obs for obs, _, _ in trace))
     acts.extend((act for _, act, _ in trace))
     qs.extend(teacher.predict_q(np.array([obs for obs, _, _ in trace])))
 
     # Step 2: Dagger outer loop
     for i in range(max_iters):
-        log('Iteration {}/{}'.format(i, max_iters), INFO)
+        log('Iteration {}/{}'.format(i, max_iters))
 
         # Step 2a: Train from a random subset of aggregated data
         cur_obss, cur_acts, cur_qs = _sample(np.array(obss), np.array(acts), np.array(qs), max_samples, is_reweight)
-        log('Training student with {} points'.format(len(cur_obss)), INFO)
+        log('Training student with {} points'.format(len(cur_obss)))
         student.train(cur_obss, cur_acts, train_frac)
 
         # Step 2b: Generate trace using student
-        student_trace = get_rollouts(env, wrapped_student, False, n_batch_rollouts)
+        student_trace = get_rollouts(env, student, False, n_batch_rollouts)
         student_obss = [obs for obs, _, _ in student_trace]
         
         # Step 2c: Query the oracle for supervision
@@ -170,16 +178,18 @@ def train_dagger(env, teacher, student, state_transformer, max_iters, n_batch_ro
         teacher_acts = teacher.predict(student_obss)
 
         # Step 2d: Add the augmented state-action pairs back to aggregate
-        obss.extend((state_transformer(obs) for obs in student_obss))
+        obss.extend((obs for obs in student_obss))
         acts.extend(teacher_acts)
         qs.extend(teacher_qs)
 
         # Step 2e: Estimate the reward
         cur_rew = sum((rew for _, _, rew in student_trace)) / n_batch_rollouts
-        log('Student reward: {}'.format(cur_rew), INFO)
+        log('Student reward: {}'.format(cur_rew))
 
         students.append((student.clone(), cur_rew))
 
-    max_student = identify_best_policy(env, students, state_transformer, n_test_rollouts)
 
+    max_student = identify_best_policy(env, students, n_test_rollouts)
+
+    print("found the best student")
     return max_student

@@ -35,3 +35,26 @@ class QNetwork(nn.Module):
         x = self.fc2(x)
         x = F.relu(x)
         return self.fc3(x)
+    
+    def predict(self, obss):
+        def one():
+            for next_states in obss:
+                next_states = torch.from_numpy(next_states).float()
+                qs = self.forward(next_states)
+                _, indices = torch.sort(qs, descending=True)
+                yield indices[0].numpy()
+
+        with torch.no_grad():
+            return list(one())
+
+    def predict_q(self, obss):
+        def one():
+            for next_states in obss:
+                next_states = torch.from_numpy(next_states).float()
+                yield self.forward(next_states).numpy()
+
+        with torch.no_grad():
+            return list(one())
+        
+
+
