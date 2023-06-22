@@ -13,16 +13,16 @@ def load_model(q_network):
 
 def learn_dt():
     # Parameters
-    log_fname = '../pong_dt.log'
-    model_path = '../data/model-atari-pong-1/saved'
+    log_fname = 'logs/dt.log'
+    expert_model_path = 'checkpoint.pth'
     max_depth = 12
     n_batch_rollouts = 10
     max_samples = 250000
-    max_iters = 80
+    max_iters = 30
     train_frac = 0.8
     is_reweight = True
     n_test_rollouts = 50
-    save_dirname = '/tmp/pong'
+    save_dirname = 'models'
     save_fname = 'dt_policy.pk'
     save_viz_fname = 'dt_policy.dot'
     is_train = True
@@ -48,11 +48,12 @@ def learn_dt():
     # Test student
     rew = test_policy(env, student, n_test_rollouts)
     log('Final reward: {}'.format(rew))
-    log('Number of nodes: {}'.format(student.tree.tree_.node_count))
+    if hasattr(student.tree, "tree_"):
+        log('Number of nodes: {}'.format(student.tree.tree_.node_count))
 
 def print_size():
     # Parameters
-    dirname = 'results/run9'
+    dirname = 'models'
     fname = 'dt_policy.pk'
 
     # Load decision tree

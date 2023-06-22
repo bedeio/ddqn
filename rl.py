@@ -79,14 +79,6 @@ def _sample(obss, acts, qs, max_pts, is_reweight):
     # Step 3: Obtain sampled indices
     return obss[idx], acts[idx], qs[idx]
 
-class TransformerPolicy:
-    def __init__(self, policy, state_transformer):
-        self.policy = policy
-        self.state_transformer = state_transformer
-
-    def predict(self, obss):
-        return self.policy.predict(np.array([self.state_transformer(obs) for obs in obss]))
-
 def test_policy(env, policy, n_test_rollouts):
     print("-- Testing policy")
     cum_rew = 0.0
@@ -96,7 +88,7 @@ def test_policy(env, policy, n_test_rollouts):
     return cum_rew / n_test_rollouts
 
 def identify_best_policy(env, policies, n_test_rollouts):
-    log('Initial policy count: {}'.format(len(policies)), INFO)
+    log('Initial policy count: {}'.format(len(policies)))
     # cut policies by half on each iteration
     while len(policies) > 1:
         # Step 1: Sort policies by current estimated reward
@@ -104,14 +96,14 @@ def identify_best_policy(env, policies, n_test_rollouts):
 
         # Step 2: Prune second half of policies
         n_policies = int((len(policies) + 1)/2)
-        log('Current policy count: {}'.format(n_policies), INFO)
+        log('Current policy count: {}'.format(n_policies))
 
         # Step 3: build new policies
         new_policies = []
         for i in range(n_policies):
             policy, rew = policies[i]
             new_rew = test_policy(env, policy, n_test_rollouts)
-            new_policies.append((policy, new_rew))
+            new_policies.append((policy, new_rew - rew))
             log('Reward update: {} -> {}'.format(rew, new_rew))
 
         policies = new_policies

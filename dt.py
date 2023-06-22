@@ -18,7 +18,7 @@ import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import export_graphviz
 
-from sklearn.linear_model import RidgeClassifier
+from sklearn.linear_model import RidgeClassifier, LogisticRegression
 from lineartree import LinearTreeClassifier
 
 log = print
@@ -46,7 +46,14 @@ def save_dt_policy(dt_policy, dirname, fname):
 def save_dt_policy_viz(dt_policy, dirname, fname):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
-    export_graphviz(dt_policy.tree, dirname + '/' + fname)
+    if hasattr(dt_policy.tree, "tree_"):
+        export_graphviz(dt_policy.tree, dirname + '/' + fname)
+    else:
+        feature_names = ["x", "y", "dx", "dy", "theta", "d_theta", "left_contact", "right_contact"]
+        dot = dt_policy.tree.model_to_dot(feature_names=feature_names)
+        dot.write(f'{dirname}/{fname}')
+        dot.write_png(f'{dirname}/{fname}.png')
+        
 
 def load_dt_policy(dirname, fname):
     f = open(dirname + '/' + fname, 'rb')
@@ -59,7 +66,8 @@ class DTPolicy:
         self.max_depth = max_depth
     
     def fit(self, obss, acts):
-        self.tree = LinearTreeClassifier(base_estimator=RidgeClassifier())
+        self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=RidgeClassifier(), criterion='hamming')
+        # self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=LogisticRegression(solver='saga'), criterion='crossentropy')
         # self.tree = DecisionTreeClassifier(max_depth=self.max_depth, ccp_alpha=0.001)
         self.tree.fit(obss, acts)
 

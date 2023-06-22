@@ -1,0 +1,31 @@
+graph linear_tree {
+0 [label="id_node: 0\nd_theta <= 0.05859\nloss: 0.3722\nsamples: 104767", shape=rectangle];
+1 [label="id_node: 1\ny <= 0.33229\nloss: 0.3542\nsamples: 82940", shape=rectangle];
+2 [label="id_node: 2\ntheta <= 0.02376\nloss: 0.2930\nsamples: 21827", shape=rectangle];
+3 [label="id_node: 3\ndx <= -0.02934\nloss: 0.3069\nsamples: 61071", shape=rectangle];
+4 [label="id_node: 4\ntheta <= -0.0152\nloss: 0.3446\nsamples: 21869", shape=rectangle];
+6 [label="id_node: 6\ndx <= 0.01922\nloss: 0.2392\nsamples: 43650", shape=rectangle];
+7 [label="id_node: 7\nx <= 0.06429\nloss: 0.1682\nsamples: 25643", shape=rectangle];
+5 [label="id_node: 5\nloss: 0.3081\nsamples: 17421"];
+9 [label="id_node: 9\nloss: 0.1550\nsamples: 13990"];
+10 [label="id_node: 10\nloss: 0.1842\nsamples: 11653"];
+8 [label="id_node: 8\nloss: 0.3233\nsamples: 18007"];
+11 [label="id_node: 11\nloss: 0.2979\nsamples: 11103"];
+12 [label="id_node: 12\nloss: 0.3928\nsamples: 10766"];
+13 [label="id_node: 13\nloss: 0.3668\nsamples: 10924"];
+14 [label="id_node: 14\nloss: 0.2190\nsamples: 10903"];
+0 -- 1;
+0 -- 2;
+1 -- 3;
+1 -- 4;
+2 -- 13;
+2 -- 14;
+3 -- 5;
+3 -- 6;
+4 -- 11;
+4 -- 12;
+6 -- 7;
+6 -- 8;
+7 -- 9;
+7 -- 10;
+}
