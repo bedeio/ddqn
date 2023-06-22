@@ -15,13 +15,13 @@ def learn_dt():
     # Parameters
     log_fname = 'logs/dt.log'
     expert_model_path = 'checkpoint.pth'
-    max_depth = 12
-    n_batch_rollouts = 10
+    max_depth = 2
+    n_batch_rollouts = 25
     max_samples = 250000
-    max_iters = 30
+    max_iters = 40
     train_frac = 0.8
     is_reweight = True
-    n_test_rollouts = 50
+    n_test_rollouts = 30
     save_dirname = 'models'
     save_fname = 'dt_policy.pk'
     save_viz_fname = 'dt_policy.dot'

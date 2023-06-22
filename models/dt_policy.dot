@@ -1,31 +1,17 @@
-graph linear_tree {
-0 [label="id_node: 0\nd_theta <= 0.05859\nloss: 0.3722\nsamples: 104767", shape=rectangle];
-1 [label="id_node: 1\ny <= 0.33229\nloss: 0.3542\nsamples: 82940", shape=rectangle];
-2 [label="id_node: 2\ntheta <= 0.02376\nloss: 0.2930\nsamples: 21827", shape=rectangle];
-3 [label="id_node: 3\ndx <= -0.02934\nloss: 0.3069\nsamples: 61071", shape=rectangle];
-4 [label="id_node: 4\ntheta <= -0.0152\nloss: 0.3446\nsamples: 21869", shape=rectangle];
-6 [label="id_node: 6\ndx <= 0.01922\nloss: 0.2392\nsamples: 43650", shape=rectangle];
-7 [label="id_node: 7\nx <= 0.06429\nloss: 0.1682\nsamples: 25643", shape=rectangle];
-5 [label="id_node: 5\nloss: 0.3081\nsamples: 17421"];
-9 [label="id_node: 9\nloss: 0.1550\nsamples: 13990"];
-10 [label="id_node: 10\nloss: 0.1842\nsamples: 11653"];
-8 [label="id_node: 8\nloss: 0.3233\nsamples: 18007"];
-11 [label="id_node: 11\nloss: 0.2979\nsamples: 11103"];
-12 [label="id_node: 12\nloss: 0.3928\nsamples: 10766"];
-13 [label="id_node: 13\nloss: 0.3668\nsamples: 10924"];
-14 [label="id_node: 14\nloss: 0.2190\nsamples: 10903"];
-0 -- 1;
-0 -- 2;
-1 -- 3;
-1 -- 4;
-2 -- 13;
-2 -- 14;
-3 -- 5;
-3 -- 6;
-4 -- 11;
-4 -- 12;
-6 -- 7;
-6 -- 8;
-7 -- 9;
-7 -- 10;
+digraph Tree {
+node [shape=box, style="filled", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+0 [label="theta <= -0.002\ngini = 0.681\nsamples = 39594\nvalue = [1533, 15181, 9672, 13208]\nclass = fire left engine", fillcolor="#f1fdf0"] ;
+1 [label="dy <= -0.672\ngini = 0.505\nsamples = 20038\nvalue = [1086, 13218, 4632, 1102]\nclass = fire left engine", fillcolor="#98f191"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="gini = 0.556\nsamples = 7620\nvalue = [1, 3204, 3910, 505]\nclass = fire main engine", fillcolor="#dfeffb"] ;
+1 -> 2 ;
+3 [label="gini = 0.336\nsamples = 12418\nvalue = [1085, 10014, 722, 597]\nclass = fire left engine", fillcolor="#6eeb63"] ;
+1 -> 3 ;
+4 [label="theta <= 0.301\ngini = 0.54\nsamples = 19556\nvalue = [447, 1963, 5040, 12106]\nclass = fire right engine", fillcolor="#ec9ff2"] ;
+0 -> 4 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+5 [label="gini = 0.645\nsamples = 12512\nvalue = [447, 1908, 4848, 5309]\nclass = fire right engine", fillcolor="#fdf3fd"] ;
+4 -> 5 ;
+6 [label="gini = 0.068\nsamples = 7044\nvalue = [0, 55, 192, 6797]\nclass = fire right engine", fillcolor="#d840e6"] ;
+4 -> 6 ;
 }

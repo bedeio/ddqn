@@ -103,7 +103,7 @@ def identify_best_policy(env, policies, n_test_rollouts):
         for i in range(n_policies):
             policy, rew = policies[i]
             new_rew = test_policy(env, policy, n_test_rollouts)
-            new_policies.append((policy, new_rew - rew))
+            new_policies.append((policy, new_rew))
             log('Reward update: {} -> {}'.format(rew, new_rew))
 
         policies = new_policies
