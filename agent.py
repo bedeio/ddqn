@@ -118,7 +118,7 @@ class Agent():
 
         ### Loss calculation (we used Mean squared error)
         # loss = F.mse_loss(q_expected, q_targets)
-        loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.5)
+        loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.1)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

@@ -107,7 +107,7 @@ def dqn(agent, n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_dec
 
 
 
-def plot_scores(scores):
+def plot_scores(scores, filename='graphs/scores_plot.png'):
     # --------------------------
     # Plot the learning progress
     # --------------------------
@@ -116,9 +116,11 @@ def plot_scores(scores):
     plt.plot(np.arange(len(scores)), scores)
     plt.ylabel('Score')
     plt.xlabel('Episode #')
+
+    plt.savefig(filename)
     plt.show()
 
-def plot_validation_progress(episodes_list, score_avg_list):
+def plot_validation_progress(episodes_list, score_avg_list, filename='graphs/validation_plot.png'):
     # ----------------------------
     # Plot the validation progress
     # ----------------------------
@@ -132,6 +134,8 @@ def plot_validation_progress(episodes_list, score_avg_list):
     plt.xlabel('Episodes')
     plt.ylabel('Score')
     plt.legend()
+
+    plt.savefig(filename)
     plt.show()
 
 
@@ -157,6 +161,8 @@ if __name__ == '__main__':
     # print('Running on device:', device)
     agent = Agent(env, state_size=8, action_size=4, seed=42, GAMMA=GAMMA, TAU=TAU, LR=LR, UPDATE_EVERY=UPDATE_EVERY, BATCH_SIZE=BATCH_SIZE, BUFFER_SIZE=BUFFER_SIZE, DDQN=DDQN)
     scores, episodes_list, score_avg_list, score_interval_list = dqn(agent)
+    plot_validation_progress(episodes_list, score_avg_list)
+    plot_scores(scores)
     # agent = Agent(state_size=8, action_size=4, seed=42)
     show_video_of_model(agent, 'LunarLander-v2')
 
