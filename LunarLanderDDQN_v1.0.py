@@ -100,7 +100,7 @@ def dqn(agent, n_episodes=1500, max_t=1000, eps_start=1.0, eps_end=0.01, eps_dec
             episodes_list.append(i_episode)
             score_avg_list.append(score_avg)
             score_interval_list.append(score_interval)
-            torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+            torch.save(agent.qnetwork_local.state_dict(), 'models/checkpoint.pth')
             break
 
     return scores, episodes_list, score_avg_list, score_interval_list

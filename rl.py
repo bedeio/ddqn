@@ -87,6 +87,17 @@ def test_policy(env, policy, n_test_rollouts):
         cum_rew += sum((rew for _, _, rew in student_trace))
     return cum_rew / n_test_rollouts
 
+def test_policy_full(env, policy, n_test_rollouts):
+    print("-- Testing policy")
+    rewards = []
+    for i in range(n_test_rollouts):
+        # print("Ep #:", i)
+        student_trace = get_rollout(env, policy, False)
+        ep_rew = sum((rew for _, _, rew in student_trace))
+        rewards.append(ep_rew)
+
+    return rewards
+
 def identify_best_policy(env, policies, n_test_rollouts):
     log('Initial policy count: {}'.format(len(policies)))
     # cut policies by half on each iteration

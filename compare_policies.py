@@ -1,0 +1,44 @@
+from rl import test_policy_full
+
+import torch
+import gymnasium as gym
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+from dqn import QNetwork
+from rl import train_dagger, test_policy_full
+from dt import DTPolicy, load_dt_policy, save_dt_policy, save_dt_policy_viz 
+
+def load_ddqn():
+    q_network = QNetwork(state_size=8, action_size=4, seed=42)
+    q_network.load_state_dict(
+        torch.load('checkpoint.pth', map_location=torch.device('cpu')))
+    
+    return q_network
+
+def compare_all():
+    env = gym.make('LunarLander-v2')
+    n=200
+
+    print("Loading models...")
+    policies = {
+        'ddqn': load_ddqn(),
+        'simple_dt': load_dt_policy('models', 'simple_dt_policy.pk'),
+        'logistic_dt': load_dt_policy('models', 'logistic_dt_policy.pk'),
+    }
+
+    rewards = {}
+    for model in policies:
+        print("Testing model:", model)
+        rewards[model] = test_policy_full(env, policies[model], n_test_rollouts=n)
+    
+    df = pd.DataFrame.from_dict(rewards)
+    print(df.head())
+    sns.violinplot(data=df, palette='tab10', showmeans=True)
+    plt.show()
+    
+
+
+if __name__ == '__main__':
+    compare_all()

@@ -14,17 +14,17 @@ def load_model(q_network):
 def learn_dt():
     # Parameters
     log_fname = 'logs/dt.log'
-    expert_model_path = 'checkpoint.pth'
-    max_depth = 12
+    expert_model_path = 'models/checkpoint.pth'
+    max_depth = 6
     n_batch_rollouts = 10
     max_samples = 250000
-    max_iters = 30
+    max_iters = 35
     train_frac = 0.8
     is_reweight = True
     n_test_rollouts = 50
     save_dirname = 'models'
-    save_fname = 'dt_policy.pk'
-    save_viz_fname = 'dt_policy.dot'
+    save_fname = 'linear_dt_policy.pk'
+    save_viz_fname = 'linear_dt_policy.dot'
     is_train = True
     
     # Logging
