@@ -19,12 +19,13 @@ def load_ddqn():
 
 def compare_all():
     env = gym.make('LunarLander-v2')
-    n=200
+    n=1000
 
     print("Loading models...")
     policies = {
         'ddqn': load_ddqn(),
         'simple_dt': load_dt_policy('models', 'simple_dt_policy.pk'),
+        'linear_dt': load_dt_policy('models', 'linear_dt_policy.pk'),
         'logistic_dt': load_dt_policy('models', 'logistic_dt_policy.pk'),
     }
 
@@ -35,7 +36,9 @@ def compare_all():
     
     df = pd.DataFrame.from_dict(rewards)
     print(df.head())
+    plt.figure(figsize=(9,5))
     sns.violinplot(data=df, palette='tab10', showmeans=True)
+    plt.savefig('comp.png')
     plt.show()
     
 
