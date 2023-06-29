@@ -44,12 +44,16 @@ def save_dt_policy(dt_policy, dirname, fname):
     f.close()
 
 def save_dt_policy_viz(dt_policy, dirname, fname):
+    feature_names = ["x", "y", "dx", "dy", "theta", "d_theta", "left_contact", "right_contact"]
+    class_names = ["do nothing", "fire left engine", "fire main engine", "fire right engine"]
+
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
     if hasattr(dt_policy.tree, "tree_"):
-        export_graphviz(dt_policy.tree, dirname + '/' + fname)
+        export_graphviz(dt_policy.tree, dirname + '/' + fname, feature_names=feature_names, class_names=class_names, filled=True)
+        from subprocess import call
+        call(['dot', '-Tpng', dirname + '/' + fname, '-o', dirname + '/dt_simple.png', '-Gdpi=300'])
     else:
-        feature_names = ["x", "y", "dx", "dy", "theta", "d_theta", "left_contact", "right_contact"]
         dot = dt_policy.tree.model_to_dot(feature_names=feature_names)
         dot.write(f'{dirname}/{fname}')
         dot.write_png(f'{dirname}/{fname}.png')
@@ -66,9 +70,9 @@ class DTPolicy:
         self.max_depth = max_depth
     
     def fit(self, obss, acts):
-        self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=RidgeClassifier(), criterion='hamming')
+        # self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=RidgeClassifier(), criterion='hamming')
         # self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=LogisticRegression(solver='saga'), criterion='crossentropy')
-        # self.tree = DecisionTreeClassifier(max_depth=self.max_depth, ccp_alpha=0.001)
+        self.tree = DecisionTreeClassifier(max_depth=self.max_depth)
         self.tree.fit(obss, acts)
 
     def train(self, obss, acts, train_frac):

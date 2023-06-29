@@ -21,7 +21,7 @@ def learn_dt():
     max_iters = 35
     train_frac = 0.8
     is_reweight = True
-    n_test_rollouts = 50
+    n_test_rollouts = 30
     save_dirname = 'models'
     save_fname = 'linear_dt_policy.pk'
     save_viz_fname = 'linear_dt_policy.dot'
