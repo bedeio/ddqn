@@ -27,7 +27,7 @@ policies = {
     'logistic_dt': load_dt_policy('models', 'logistic_dt_policy.pk'),
 }
 
-n = 10
+n = 1000
 
 
 def compare_all():
@@ -59,32 +59,16 @@ def compare_all():
     df_mean_rewards_pivot = df_mean_rewards.pivot(
         index='Model', columns='Wind Power', values='Avg. Reward')
 
-    # Add "wind_power=" to the column names
+    # Simplify column names
     df_mean_rewards_pivot.columns = [
-        'wind_power=' + str(col) for col in df_mean_rewards_pivot.columns]
+        'wind=' + str(col) for col in df_mean_rewards_pivot.columns]
 
     # Round the rewards to 2 decimal places
     df_mean_rewards_pivot = df_mean_rewards_pivot.round(2)
 
-    # Create a new figure
-    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-
-    # Hide axes
-    ax.axis('tight')
-    ax.axis('off')
-
-    # Create the table and scale it to the figure
-    the_table = ax.table(cellText=df_mean_rewards_pivot.values,
-                         colLabels=df_mean_rewards_pivot.columns,
-                         rowLabels=df_mean_rewards_pivot.index,
-                         cellLoc='center', loc='center')
-
-    # Save the figure before showing it
-    name = 'table.png' if turbulence == 0 else 'table_with_turbulence.png'
-    plt.savefig(name, bbox_inches='tight')
-
-    # Show the plot
-    plt.show()
+    # Save the DataFrame to a CSV file
+    name = 'csv/rewards.csv' if turbulence == 0 else 'csv/rewards_with_turbulence.csv'
+    df_mean_rewards_pivot.to_csv(name)
 
 
 if __name__ == '__main__':
