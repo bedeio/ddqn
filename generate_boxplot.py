@@ -48,7 +48,7 @@ def compare_all():
     print(df.head())
     plt.figure(figsize=(9, 5))
     sns.violinplot(data=df, palette='tab10')
-    plt.savefig('comp.png')
+    plt.savefig('plots/violin_wind_turb.png')
     plt.show()
     plt.close()
 
@@ -61,7 +61,7 @@ def compare_all():
                    "markerfacecolor": "white",
                    "markeredgecolor": "black",
                    "markersize": "8"})
-    plt.savefig('box_comp.png')
+    plt.savefig('plots/box_wind_turb.png')
     plt.show()
 
 
