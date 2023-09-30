@@ -15,6 +15,7 @@ from collections import deque, namedtuple
 # ------------
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+
 class Agent():
     """Interacts with and learns from the environment."""
 
@@ -29,7 +30,7 @@ class Agent():
         """
         self.state_size = state_size
         self.action_size = action_size
-        self.seed = 42 #random.seed(seed)
+        self.seed = 42  # random.seed(seed)
         self.env = env
 
         # hyper params
@@ -46,9 +47,11 @@ class Agent():
         # Q-Network
         # from ddt import DDT
         # self.qnetwork_local = DDT(alpha=1, input_dim=8, output_dim=4, leaves=32, is_value=True, weights=None, comparators=None)
-        self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
+        self.qnetwork_local = QNetwork(
+            state_size, action_size, seed).to(device)
         # self.qnetwork_target = DDT(alpha=1, input_dim=8, output_dim=4, leaves=32, is_value=True, weights=None, comparators=None)
-        self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
+        self.qnetwork_target = QNetwork(
+            state_size, action_size, seed).to(device)
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
 
         # Replay memory
@@ -100,25 +103,28 @@ class Agent():
         # Obtain random minibatch of tuples from D
         states, actions, rewards, next_states, dones = experiences
 
-        ## Compute and minimize the loss
+        # Compute and minimize the loss
 
-        if self.DDQN == True: # Double DQN
-            ### Extract next action indices using the local network
-            next_actions = self.qnetwork_local(next_states).argmax(1).unsqueeze(1)
-            ### Evaluate next state's Q-values using the target network
-            q_targets_next = self.qnetwork_target(next_states).gather(1, next_actions).detach()
+        if self.DDQN == True:  # Double DQN
+            # Extract next action indices using the local network
+            next_actions = self.qnetwork_local(
+                next_states).argmax(1).unsqueeze(1)
+            # Evaluate next state's Q-values using the target network
+            q_targets_next = self.qnetwork_target(
+                next_states).gather(1, next_actions).detach()
         else:            # DQN
-            ### Extract next maximum estimated value from target network
-            q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+            # Extract next maximum estimated value from target network
+            q_targets_next = self.qnetwork_target(
+                next_states).detach().max(1)[0].unsqueeze(1)
 
-        ### Calculate target value from Bellman equation
+        # Calculate target value from Bellman equation
         q_targets = rewards + gamma * q_targets_next * (1 - dones)
-        ### Calculate expected value from local network
+        # Calculate expected value from local network
         q_expected = self.qnetwork_local(states).gather(1, actions)
 
-        ### Loss calculation (we used Mean squared error)
-        # loss = F.mse_loss(q_expected, q_targets)
-        loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.1)
+        # Loss calculation (we used Mean squared error)
+        loss = F.huber_loss(q_expected, q_targets)
+        # loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.1)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -138,7 +144,8 @@ class Agent():
             tau (float): interpolation parameter
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
-            target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+            target_param.data.copy_(
+                tau * local_param.data + (1.0 - tau) * target_param.data)
 
     def hard_update(self, local_model, target_model):
         """Hard update model parameters.
@@ -152,12 +159,11 @@ class Agent():
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(local_param.data)
 
-
     # ----------------------------------------------------------
     # Validation Process do Agent
     # Retorna a média do score e o intervalo de confiança de 95%
     # ----------________________________________________________
-    def validation(self,num_evaluations):
+    def validation(self, num_evaluations):
         rewards = []
         self.qnetwork_local.eval()
         with torch.no_grad():
@@ -167,7 +173,8 @@ class Agent():
                 reward_acum = 0
                 while not done:
                     action = self.act(state)
-                    state, reward, terminated, truncated, info = self.env.step(action)
+                    state, reward, terminated, truncated, info = self.env.step(
+                        action)
                     reward_acum = reward_acum + reward
                     if terminated or truncated or reward_acum <= -250:
                         rewards.append(reward_acum)
@@ -177,7 +184,8 @@ class Agent():
         average = np.mean(rewards)
 
         # Calculate 95% confidence interval
-        confidence_interval = stats.t.interval(0.95, len(rewards)-1, loc=average, scale=stats.sem(rewards))
+        confidence_interval = stats.t.interval(
+            0.95, len(rewards)-1, loc=average, scale=stats.sem(rewards))
 
         self.qnetwork_local.train()
         self.env.close()
@@ -186,6 +194,8 @@ class Agent():
 # --------------------
 # Define Replay Buffer
 # --------------------
+
+
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
 
@@ -202,7 +212,8 @@ class ReplayBuffer:
         self.action_size = action_size
         self.memory = deque(maxlen=buffer_size)
         self.batch_size = batch_size
-        self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
+        self.experience = namedtuple("Experience", field_names=[
+                                     "state", "action", "reward", "next_state", "done"])
         self.seed = random.seed(seed)
 
     def add(self, state, action, reward, next_state, done):
@@ -214,9 +225,12 @@ class ReplayBuffer:
         """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
 
-        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device, non_blocking=True)
-        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).long().to(device, non_blocking=True)
-        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device, non_blocking=True)
+        states = torch.from_numpy(np.vstack(
+            [e.state for e in experiences if e is not None])).float().to(device, non_blocking=True)
+        actions = torch.from_numpy(np.vstack(
+            [e.action for e in experiences if e is not None])).long().to(device, non_blocking=True)
+        rewards = torch.from_numpy(np.vstack(
+            [e.reward for e in experiences if e is not None])).float().to(device, non_blocking=True)
         next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(
             device, non_blocking=True)
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(

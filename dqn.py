@@ -21,9 +21,9 @@ class QNetwork(nn.Module):
         """
         super(QNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.fc1 = nn.Linear(state_size, 64)
-        self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, action_size)
+        self.fc1 = nn.Linear(state_size, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, action_size)
 
     def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
         return super().load_state_dict(state_dict, strict)
@@ -35,7 +35,7 @@ class QNetwork(nn.Module):
         x = self.fc2(x)
         x = F.relu(x)
         return self.fc3(x)
-    
+
     def predict(self, obss):
         def one():
             for next_states in obss:
@@ -55,6 +55,3 @@ class QNetwork(nn.Module):
 
         with torch.no_grad():
             return list(one())
-        
-
-
