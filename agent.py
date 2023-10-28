@@ -88,6 +88,7 @@ class Agent():
 
         # Epsilon-greedy action selection
         if random.random() > eps:
+            # print("Best:", action_values.shape)
             return np.argmax(action_values.cpu().data.numpy())
         else:
             return random.choice(np.arange(self.action_size))
@@ -123,8 +124,8 @@ class Agent():
         q_expected = self.qnetwork_local(states).gather(1, actions)
 
         # Loss calculation (we used Mean squared error)
-        loss = F.huber_loss(q_expected, q_targets)
-        # loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.1)
+        # loss = F.huber_loss(q_expected, q_targets)
+        loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.1)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -166,17 +167,20 @@ class Agent():
     def validation(self, num_evaluations):
         rewards = []
         self.qnetwork_local.eval()
+        max_t = 1500
         with torch.no_grad():
             for _ in range(num_evaluations):
-                state = np.array(self.env.reset()[0])
+                state = np.array(self.env.reset())
                 done = False
                 reward_acum = 0
+                t = 0
                 while not done:
                     action = self.act(state)
-                    state, reward, terminated, truncated, info = self.env.step(
+                    state, reward, terminated, info = self.env.step(
                         action)
                     reward_acum = reward_acum + reward
-                    if terminated or truncated or reward_acum <= -250:
+                    t += 1
+                    if terminated or reward_acum <= -250 or t < max_t:
                         rewards.append(reward_acum)
                         break
 
@@ -219,22 +223,19 @@ class ReplayBuffer:
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
         e = self.experience(state, action, reward, next_state, done)
+        # print("Adding state:", state.shape)
+        # print("Adding next_state:", next_state.shape)
         self.memory.append(e)
 
     def sample(self):
         """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
 
-        states = torch.from_numpy(np.vstack(
-            [e.state for e in experiences if e is not None])).float().to(device, non_blocking=True)
-        actions = torch.from_numpy(np.vstack(
-            [e.action for e in experiences if e is not None])).long().to(device, non_blocking=True)
-        rewards = torch.from_numpy(np.vstack(
-            [e.reward for e in experiences if e is not None])).float().to(device, non_blocking=True)
-        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(
-            device, non_blocking=True)
-        dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(
-            device, non_blocking=True)
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device, non_blocking=True).view(self.batch_size, 4, 13, 9)
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).long().to(device, non_blocking=True)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device, non_blocking=True)
+        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(device, non_blocking=True).view(self.batch_size, 4, 13, 9)
+        dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(device, non_blocking=True)
 
         return (states, actions, rewards, next_states, dones)
 

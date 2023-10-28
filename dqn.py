@@ -30,6 +30,8 @@ class QNetwork(nn.Module):
 
     def forward(self, state):
         """Build a network that maps state -> action values."""
+        state = state.contiguous().view(state.size(0), -1)
+        # print("Forward:", state.shape)
         x = self.fc1(state)
         x = F.relu(x)
         x = self.fc2(x)

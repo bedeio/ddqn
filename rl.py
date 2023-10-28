@@ -45,8 +45,8 @@ def get_rollout(env, policy, render):
         act = policy.predict(np.array([obs]))[0]
 
         # Step
-        next_obs, rew, terminated, truncated, info = env.step(act)
-        done = terminated or truncated
+        next_obs, rew, terminated, info = env.step(act)
+        done = terminated
 
         # Rollout (s, a, r)
         # print("Rollowt")

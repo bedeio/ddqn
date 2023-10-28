@@ -1,7 +1,10 @@
 # -----------------------------
 # Import the Necessary Packages
 # -----------------------------
-import gymnasium as gym
+import gym
+import gym_sokoban
+import griddly
+from griddly import GymWrapperFactory, gd
 import random
 import torch
 
@@ -52,7 +55,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # ----------------
 
 
-def dqn(agent, n_episodes=5000, max_t=1000, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
+def dqn(agent, n_episodes=5000, max_t=1500, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
     """Deep Q-Learning.
 
     Params
@@ -70,16 +73,19 @@ def dqn(agent, n_episodes=5000, max_t=1000, eps_start=1.0, eps_end=0.05, eps_dec
     scores_window = deque(maxlen=100)  # last 100 scores
     eps = eps_start  # initialize epsilon
     for i_episode in range(1, n_episodes + 1):
-        state = np.array(env.reset()[0])
+        state = np.array(env.reset())
         score = 0
         for t in range(max_t):
+            # print("State shape:", state.shape)
             action = agent.act(state, eps)
+            # print("t:", t)
             next_state, reward, done, *extra_vars = env.step(action)
             agent.step(state, action, reward, next_state, done)
             state = next_state
             score += reward
             if done:
                 break
+
         scores_window.append(score)  # save most recent score
         scores.append(score)  # save most recent score
         eps = max(eps_end, eps_decay * eps)  # decrease epsilon
@@ -166,12 +172,15 @@ def show_video_of_model(agent, env_name):
 
 if __name__ == '__main__':
     # env = gym.make('LunarLander-v2', render_mode="human")
-    env = gym.make('CartPole-v1')
+    env = gym.make('GDY-Sokoban-v0', render_mode="human",
+                    player_observer_type=gd.ObserverType.VECTOR,
+                   )
+    
     # print('Running on device:', device)
-    agent = Agent(env, state_size=4, action_size=2, seed=42, GAMMA=GAMMA, TAU=TAU, LR=LR,
+    agent = Agent(env, state_size=13*9*4, action_size=4, seed=42, GAMMA=GAMMA, TAU=TAU, LR=LR,
                   UPDATE_EVERY=UPDATE_EVERY, BATCH_SIZE=BATCH_SIZE, BUFFER_SIZE=BUFFER_SIZE, DDQN=DDQN)
     scores, episodes_list, score_avg_list, score_interval_list = dqn(agent)
     plot_validation_progress(episodes_list, score_avg_list)
     plot_scores(scores)
     # agent = Agent(state_size=8, action_size=4, seed=42)
-    show_video_of_model(agent, 'LunarLander-v2')
+    show_video_of_model(agent, 'GDY-Sokoban-v0')
