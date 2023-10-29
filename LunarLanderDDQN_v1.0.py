@@ -19,7 +19,7 @@ from IPython.display import HTML
 from IPython import display
 import glob
 
-from agent import Agent, ReplayBuffer
+from agent import Agent, ReplayBuffer, decode_state
 from dqn import QNetwork
 
 
@@ -34,14 +34,14 @@ from dqn import QNetwork
 # Define some hyperparameter
 # --------------------------
 DDQN = True             # DDQN = False for DQN and True for Double DQN
-BUFFER_SIZE = int(3e5)  # replay buffer size
-BATCH_SIZE = 256         # minibatch size
+BUFFER_SIZE = int(5e5)  # replay buffer size
+BATCH_SIZE = 64         # minibatch size
 # BATCH_SIZE = 128         # minibatch size
-GAMMA = 0.99            # discount factor
+GAMMA = 0.95            # discount factor
 TAU = 1e-2              # for soft update of target parameters
 # TAU = 0.1
 # LR = 5e-4               # learning rate
-LR = 1e-4               # learning rate
+LR = 3e-4               # learning rate
 UPDATE_EVERY = 4        # how often to update the network
 # UPDATE_EVERY = 8        # how often to update the network
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -52,7 +52,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # ----------------
 
 
-def dqn(agent, n_episodes=5000, max_t=1000, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
+def dqn(agent, n_episodes=6000, max_t=1000, eps_start=1.0, eps_end=0.1, eps_decay=0.995):
     """Deep Q-Learning.
 
     Params
@@ -73,13 +73,14 @@ def dqn(agent, n_episodes=5000, max_t=1000, eps_start=1.0, eps_end=0.05, eps_dec
         state = np.array(env.reset()[0])
         score = 0
         for t in range(max_t):
-            action = agent.act(state, eps)
-            next_state, reward, done, *extra_vars = env.step(action)
+            action = agent.act(decode_state(state), eps)
+            next_state, reward, done, terminated, *extra_vars = env.step(action)
             agent.step(state, action, reward, next_state, done)
             state = next_state
             score += reward
-            if done:
+            if done or terminated:
                 break
+
         scores_window.append(score)  # save most recent score
         scores.append(score)  # save most recent score
         eps = max(eps_end, eps_decay * eps)  # decrease epsilon
@@ -159,19 +160,21 @@ def show_video_of_model(agent, env_name):
     done = False
     while not done:
         env.render()
-        action = agent.act(state)
+        action = agent.act(decode_state(state))
         state, reward, done, *extra_vars = env.step(action)
     env.close()
 
 
 if __name__ == '__main__':
     # env = gym.make('LunarLander-v2', render_mode="human")
-    env = gym.make('CartPole-v1')
+    env = gym.make('Taxi-v3')
     # print('Running on device:', device)
-    agent = Agent(env, state_size=4, action_size=2, seed=42, GAMMA=GAMMA, TAU=TAU, LR=LR,
+    agent = Agent(env, state_size=4, action_size=6, seed=42, GAMMA=GAMMA, TAU=TAU, LR=LR,
                   UPDATE_EVERY=UPDATE_EVERY, BATCH_SIZE=BATCH_SIZE, BUFFER_SIZE=BUFFER_SIZE, DDQN=DDQN)
     scores, episodes_list, score_avg_list, score_interval_list = dqn(agent)
     plot_validation_progress(episodes_list, score_avg_list)
     plot_scores(scores)
     # agent = Agent(state_size=8, action_size=4, seed=42)
     show_video_of_model(agent, 'LunarLander-v2')
+
+

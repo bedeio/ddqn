@@ -15,6 +15,35 @@ from collections import deque, namedtuple
 # ------------
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+def decode_state(encoded_state):
+    """
+    Decode the encoded state into its components: taxi position, passenger location, and destination.
+
+    Args:
+    - encoded_state (int): The encoded state.
+
+    Returns:
+    - taxi_row (int): Row position of the taxi.
+    - taxi_col (int): Column position of the taxi.
+    - passenger_location (int): Position of the passenger (0-4).
+    - destination (int): Destination position (0-3).
+    """
+    
+    # Decode destination
+    destination = encoded_state % 4
+    state = encoded_state // 4
+
+    # Decode passenger location
+    passenger_location = state % 5
+    state = state // 5
+
+    # Decode taxi column
+    taxi_col = state % 5
+
+    # Decode taxi row
+    taxi_row = state // 5
+
+    return np.array([taxi_row, taxi_col, passenger_location, destination])
 
 class Agent():
     """Interacts with and learns from the environment."""
@@ -123,7 +152,8 @@ class Agent():
         q_expected = self.qnetwork_local(states).gather(1, actions)
 
         # Loss calculation (we used Mean squared error)
-        loss = F.huber_loss(q_expected, q_targets)
+        # loss = F.huber_loss(q_expected, q_targets)
+        loss = F.mse_loss(q_expected, q_targets)
         # loss = F.smooth_l1_loss(q_expected, q_targets, beta=1.1)
         self.optimizer.zero_grad()
         loss.backward()
@@ -172,7 +202,7 @@ class Agent():
                 done = False
                 reward_acum = 0
                 while not done:
-                    action = self.act(state)
+                    action = self.act(decode_state(state))
                     state, reward, terminated, truncated, info = self.env.step(
                         action)
                     reward_acum = reward_acum + reward
@@ -218,7 +248,7 @@ class ReplayBuffer:
 
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
-        e = self.experience(state, action, reward, next_state, done)
+        e = self.experience(decode_state(state), action, reward, decode_state(next_state), done)
         self.memory.append(e)
 
     def sample(self):
