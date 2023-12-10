@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-import pickle as pk
+import pickle 
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import export_graphviz
@@ -40,7 +40,7 @@ def save_dt_policy(dt_policy, dirname, fname):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
     f = open(dirname + '/' + fname, 'wb')
-    pk.dump(dt_policy, f)
+    pickle.dump(dt_policy, f)
     f.close()
 
 def save_dt_policy_viz(dt_policy, dirname, fname):
@@ -61,7 +61,7 @@ def save_dt_policy_viz(dt_policy, dirname, fname):
 
 def load_dt_policy(dirname, fname):
     f = open(dirname + '/' + fname, 'rb')
-    dt_policy = pk.load(f)
+    dt_policy = pickle.load(f)
     f.close()
     return dt_policy
 
