@@ -32,7 +32,7 @@ def get_rollout(env, policy, render):
     obs = np.array(env.reset()[0])
     rollout = []
     reward_accum = 0
-    max_t = 1500
+    max_t = 2500
     t = 0
 
     while not done:
@@ -44,7 +44,7 @@ def get_rollout(env, policy, render):
         next_obs, rew, terminated, truncated, info = env.step(int(act))
         reward_accum += rew
         t += 1
-        done = terminated or truncated or reward_accum < -300 or t > max_t
+        done = terminated or truncated or reward_accum < -600 or t > max_t
 
         # Rollout (s, a, r)
         rollout.append((obs, act, rew))
