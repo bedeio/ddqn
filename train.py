@@ -22,7 +22,7 @@ def save_model(agent, env_name, models_dir='models'):
 
     torch.save(agent.qnetwork_local.state_dict(), f'{models_dir}/checkpoint_{env_name}.pth')
 
-def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=1500, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
+def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=500, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
     scores = []
     episodes_list = []
     score_avg_list = []
@@ -45,6 +45,7 @@ def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=1500, eps_start
         scores_window.append(score)
         scores.append(score)
         eps = max(eps_end, eps_decay * eps)
+        score_avg = 0
 
         print('\r', 'DDQN Training   Episode {}\tAverage Score: {:.2f}'.format(
             i_episode, np.mean(scores_window)), end="")
@@ -52,14 +53,14 @@ def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=1500, eps_start
         if i_episode % 100 == 0:
             print('\r', 'DDQN Training   Episode {}\tAverage Score: {:.2f}'.format(
                 i_episode, np.mean(scores_window)), end="")
-            score_avg, score_interval = agent.validation(num_evaluations=5)
+            score_avg, score_interval = agent.validation(num_evaluations=30)
             print(
                 f'\tValidation (Min,Avg,Max): \t{score_interval[0]:.2f},\t{score_avg:.2f},\t{score_interval[1]:.2f}')
             episodes_list.append(i_episode)
             score_avg_list.append(score_avg)
             score_interval_list.append(score_interval)
 
-        if np.mean(scores_window) >= max_score:
+        if score_avg >= max_score:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(
                 i_episode, np.mean(scores_window)))
 
@@ -75,7 +76,7 @@ def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=1500, eps_start
     return scores, episodes_list, score_avg_list, score_interval_list
 
 
-def plot_scores(scores, filename='graphs/scores_plot.png'):
+def plot_scores(scores, filename='plots/scores_plot.png'):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.plot(np.arange(len(scores)), scores)
@@ -86,7 +87,7 @@ def plot_scores(scores, filename='graphs/scores_plot.png'):
     plt.show()
 
 
-def plot_validation_progress(episodes_list, score_avg_list, filename='graphs/validation_plot.png'):
+def plot_validation_progress(episodes_list, score_avg_list, filename='plots/ddqn_validation_plot.png'):
     plt.plot(episodes_list, score_avg_list, label='Average Score')
     interval_min = [i[0] for i in score_interval_list]
     interval_max = [i[1] for i in score_interval_list]
@@ -113,8 +114,7 @@ def show_video_of_model(agent, env_name):
         state, reward, done, *extra_vars = env.step(action)
     env.close()
 
-def get_env_params(env_name):
-    env = gym.make(env_name)
+def get_env_params(env):
     state_size = env.observation_space.shape[0] if isinstance(env.observation_space, gym.spaces.Box) else env.observation_space.n
     action_size = env.action_space.n
 
@@ -138,10 +138,21 @@ def select_config(env_name, configs):
         
     raise ValueError(f"No configuration found for environment: {env_name}")
 
+
+def build_env(env_name):
+    env = gym.make(env_name)
+    state_size, action_size = get_env_params(env)
+    
+    if env_name.startswith("Taxi"):
+        state_size = 4
+        env = to.TransformObservation(env, lambda obs: decode_state(obs))
+
+    return env, state_size, action_size
+
 agent_configs = {
     "CartPole": Config(DDQN=True, BUFFER_SIZE=int(5e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
-    "LunarLander": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-3, LR=1e-3, UPDATE_EVERY=4, LOSS=F.smooth_l1_loss),
-    "Taxi": Config(DDQN=True, BUFFER_SIZE=int(5e5), BATCH_SIZE=512, GAMMA=0.8, TAU=1e-2, LR=5e-3, UPDATE_EVERY=4, LOSS=F.mse_loss)
+    "LunarLander": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-3, UPDATE_EVERY=4, LOSS=F.smooth_l1_loss),
+    "Taxi": Config(DDQN=True, BUFFER_SIZE=int(5e5), BATCH_SIZE=512, GAMMA=0.9, TAU=1e-2, LR=4e-3, UPDATE_EVERY=4, LOSS=F.mse_loss)
 }
 
 solved_scores = {
@@ -149,7 +160,7 @@ solved_scores = {
     # https://gymnasium.farama.org/environments/box2d/lunar_lander/#rewards
     "CartPole": 195,
     "LunarLander": 250, 
-    "Taxi": 5
+    "Taxi": 8
 }
 
 # Options: 'LunarLander-v2', 'Taxi-v3', 'CartPole-v1'
@@ -162,13 +173,8 @@ if __name__ == '__main__':
     env_names = sys.argv[1:] if len(sys.argv) > 1 else default_env_names
 
     for env_name in env_names:
-        state_size, action_size = get_env_params(env_name)
+        env, state_size, action_size = build_env(env_name)
         print(f"Environment: {env_name}, State Size: {state_size}, Action Size: {action_size}")
-
-        env = gym.make(env_name)
-        if env_name.startswith("Taxi"):
-            state_size = 4
-            env = to.TransformObservation(env, lambda obs: decode_state(obs))
 
         conf = select_config(env_name, agent_configs)
         agent = Agent(env, state_size=state_size, action_size=action_size, config=conf)

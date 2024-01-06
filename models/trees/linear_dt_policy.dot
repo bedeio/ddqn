@@ -1,0 +1,27 @@
+graph linear_tree {
+0 [label="id_node: 0\nd_theta <= -0.19323\nloss: 0.3988\nsamples: 87802", shape=rectangle];
+2 [label="id_node: 2\ndx <= -0.09174\nloss: 0.3836\nsamples: 73168", shape=rectangle];
+3 [label="id_node: 3\ntheta <= 0.13616\nloss: 0.3309\nsamples: 32754", shape=rectangle];
+4 [label="id_node: 4\ntheta <= -0.00987\nloss: 0.3528\nsamples: 40414", shape=rectangle];
+5 [label="id_node: 5\ny <= 0.32653\nloss: 0.3087\nsamples: 23613", shape=rectangle];
+10 [label="id_node: 10\nd_theta <= 0.01199\nloss: 0.3272\nsamples: 24297", shape=rectangle];
+1 [label="id_node: 1\nloss: 0.3000\nsamples: 14634"];
+7 [label="id_node: 7\nloss: 0.3342\nsamples: 11554"];
+8 [label="id_node: 8\nloss: 0.2843\nsamples: 12059"];
+6 [label="id_node: 6\nloss: 0.1457\nsamples: 9141"];
+9 [label="id_node: 9\nloss: 0.2996\nsamples: 16117"];
+11 [label="id_node: 11\nloss: 0.2991\nsamples: 11558"];
+12 [label="id_node: 12\nloss: 0.3528\nsamples: 12739"];
+0 -- 1;
+0 -- 2;
+2 -- 3;
+2 -- 4;
+3 -- 5;
+3 -- 6;
+4 -- 9;
+4 -- 10;
+5 -- 7;
+5 -- 8;
+10 -- 11;
+10 -- 12;
+}

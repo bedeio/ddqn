@@ -15,26 +15,18 @@
 import os
 import pickle 
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import export_graphviz
 
-from sklearn.linear_model import RidgeClassifier, LogisticRegression
+from sklearn.linear_model import RidgeClassifier, LogisticRegression, SGDClassifier
 from lineartree import LinearTreeClassifier
 
 log = print
 
 def accuracy(policy, obss, acts):
     return np.mean(acts == policy.predict(obss))
-
-def split_train_test(obss, acts, train_frac):
-    n_train = int(train_frac * len(obss))
-    idx = np.arange(len(obss))
-    np.random.shuffle(idx)
-    obss_train = obss[idx[:n_train]]
-    acts_train = acts[idx[:n_train]]
-    obss_test = obss[idx[n_train:]]
-    acts_test = acts[idx[n_train:]]
-    return obss_train, acts_train, obss_test, acts_test
 
 def save_dt_policy(dt_policy, dirname, fname):
     if not os.path.isdir(dirname):
@@ -66,26 +58,39 @@ def load_dt_policy(dirname, fname):
     return dt_policy
 
 class DTPolicy:
-    def __init__(self, max_depth):
+    def __init__(self, max_depth, tree_type):
         self.max_depth = max_depth
+        self.tree_type = tree_type
+        match tree_type:
+            case 'decision_tree':
+                self.tree = DecisionTreeClassifier(max_depth=self.max_depth, ccp_alpha=0.005)
+            case 'linear_tree_logistic':
+                self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=LogisticRegression(max_iter=350, solver='liblinear'), criterion='crossentropy')
+            case 'linear_tree_ridge':
+                self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=RidgeClassifier(max_iter=250), criterion='hamming')
+            case _:
+                raise ValueError("Invalid tree type:", tree_type)
     
     def fit(self, obss, acts):
-        # self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=RidgeClassifier(), criterion='hamming')
-        # self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=LogisticRegression(solver='saga'), criterion='crossentropy')
-        self.tree = DecisionTreeClassifier(max_depth=self.max_depth)
         self.tree.fit(obss, acts)
 
     def train(self, obss, acts, train_frac):
-        obss_train, acts_train, obss_test, acts_test = split_train_test(obss, acts, train_frac)
+        obss_train, obss_test, acts_train, acts_test = train_test_split(obss, acts, train_size=train_frac)
+        scaler = StandardScaler()
+
+        # if self.tree_type == 'linear_tree_logistic':
+        #     obss_train = scaler.fit_transform(obss_train)
+        #     obss_test = scaler.transform(obss_test)
+
         self.fit(obss_train, acts_train)
-        log('Train accuracy: {}'.format(accuracy(self, obss_train, acts_train)))
-        log('Test accuracy: {}'.format(accuracy(self, obss_test, acts_test)))
+        # log('Train accuracy: {}'.format(accuracy(self, obss_train_scaled, acts_train)))
+        # log('Test accuracy: {}'.format(accuracy(self, obss_test_scaled, acts_test)))
         # log('Number of nodes: {}'.format(self.tree.tree_.node_count))
 
     def predict(self, obss):
         return self.tree.predict(obss)
 
     def clone(self):
-        clone = DTPolicy(self.max_depth)
+        clone = DTPolicy(self.max_depth, self.tree_type)
         clone.tree = self.tree
         return clone

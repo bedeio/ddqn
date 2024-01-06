@@ -31,28 +31,23 @@ def get_rollout(env, policy, render):
     done = False
     obs = np.array(env.reset()[0])
     rollout = []
+    reward_accum = 0
+    max_t = 1500
+    t = 0
 
     while not done:
-        # Render
         if render:
             env.unwrapped.render()
 
-        # Action
-        # global counter
-        # counter += 1
-        # print(counter)
-        # print("Predicting...")
         act = policy.predict(np.array([obs]))[0]
 
-        # Step
-        next_obs, rew, terminated, truncated, info = env.step(act)
-        done = terminated or truncated
+        next_obs, rew, terminated, truncated, info = env.step(int(act))
+        reward_accum += rew
+        t += 1
+        done = terminated or truncated or reward_accum < -300 or t > max_t
 
         # Rollout (s, a, r)
-        # print("Rollowt")
         rollout.append((obs, act, rew))
-
-        # Update (and remove LazyFrames)
         obs = np.array(next_obs)
 
     return rollout
@@ -80,7 +75,6 @@ def _sample(obss, acts, qs, max_pts, is_reweight):
     return obss[idx], acts[idx], qs[idx]
 
 def test_policy(env, policy, n_test_rollouts):
-    print("-- Testing policy")
     cum_rew = 0.0
     for i in range(n_test_rollouts):
         student_trace = get_rollout(env, policy, False)
@@ -88,7 +82,6 @@ def test_policy(env, policy, n_test_rollouts):
     return cum_rew / n_test_rollouts
 
 def test_policy_full(env, policy, n_test_rollouts):
-    print("-- Testing policy")
     rewards = []
     for i in range(n_test_rollouts):
         # print("Ep #:", i)
@@ -99,7 +92,7 @@ def test_policy_full(env, policy, n_test_rollouts):
     return rewards
 
 def identify_best_policy(env, policies, n_test_rollouts):
-    log('Initial policy count: {}'.format(len(policies)))
+    # log('Initial policy count: {}'.format(len(policies)))
     # cut policies by half on each iteration
     while len(policies) > 1:
         # Step 1: Sort policies by current estimated reward
@@ -107,7 +100,7 @@ def identify_best_policy(env, policies, n_test_rollouts):
 
         # Step 2: Prune second half of policies
         n_policies = int((len(policies) + 1)/2)
-        log('Current policy count: {}'.format(n_policies))
+        # log('Current policy count: {}'.format(n_policies))
 
         # Step 3: build new policies
         new_policies = []
@@ -115,7 +108,7 @@ def identify_best_policy(env, policies, n_test_rollouts):
             policy, rew = policies[i]
             new_rew = test_policy(env, policy, n_test_rollouts)
             new_policies.append((policy, new_rew))
-            log('Reward update: {} -> {}'.format(rew, new_rew))
+            # log('Reward update: {} -> {}'.format(rew, new_rew))
 
         policies = new_policies
 
@@ -165,11 +158,12 @@ def train_dagger(env, teacher, student, max_iters, n_batch_rollouts, max_samples
 
     # Step 2: Dagger outer loop
     for i in range(max_iters):
-        log('Iteration {}/{}'.format(i, max_iters))
+        if i % 2 == 0:
+            log('Iteration {}/{}'.format(i, max_iters))
 
         # Step 2a: Train from a random subset of aggregated data
         cur_obss, cur_acts, cur_qs = _sample(np.array(obss), np.array(acts), np.array(qs), max_samples, is_reweight)
-        log('Training student with {} points'.format(len(cur_obss)))
+        # log('Training student with {} points'.format(len(cur_obss)))
         student.train(cur_obss, cur_acts, train_frac)
 
         # Step 2b: Generate trace using student
@@ -187,7 +181,7 @@ def train_dagger(env, teacher, student, max_iters, n_batch_rollouts, max_samples
 
         # Step 2e: Estimate the reward
         cur_rew = sum((rew for _, _, rew in student_trace)) / n_batch_rollouts
-        log('Student reward: {}'.format(cur_rew))
+        # log('Student reward: {}'.format(cur_rew))
 
         students.append((student.clone(), cur_rew))
 
