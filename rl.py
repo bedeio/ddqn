@@ -181,7 +181,7 @@ def train_dagger(env, teacher, student, max_iters, n_batch_rollouts, max_samples
 
         # Step 2e: Estimate the reward
         cur_rew = sum((rew for _, _, rew in student_trace)) / n_batch_rollouts
-        # log('Student reward: {}'.format(cur_rew))
+        log('Student reward: {}'.format(cur_rew))
 
         students.append((student.clone(), cur_rew))
 

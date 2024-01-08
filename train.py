@@ -123,13 +123,20 @@ def get_env_params(env):
 def decode_state(encoded_state):
     destination = encoded_state % 4
     state = encoded_state // 4
-
+    
     passenger_location = state % 5
     state = state // 5
     taxi_col = state % 5
     taxi_row = state // 5
+    
+    # One-hot encoding
+    passenger_location_encoded = np.zeros(5)
+    passenger_location_encoded[passenger_location] = 1
 
-    return np.array([taxi_row, taxi_col, passenger_location, destination])
+    destination_encoded = np.zeros(4)
+    destination_encoded[destination] = 1
+
+    return np.concatenate(([taxi_row, taxi_col], passenger_location_encoded, destination_encoded))
 
 def select_config(env_name, configs):
     for key in configs:
@@ -144,7 +151,7 @@ def build_env(env_name):
     state_size, action_size = get_env_params(env)
     
     if env_name.startswith("Taxi"):
-        state_size = 4
+        state_size = 11
         env = to.TransformObservation(env, lambda obs: decode_state(obs))
 
     return env, state_size, action_size
