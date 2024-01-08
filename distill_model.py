@@ -62,7 +62,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train and test a decision tree policy.")
     parser.add_argument("--log_fname", type=str, default='logs/dt.log')
     parser.add_argument("--max_depth", type=int, default=6)
-    parser.add_argument("--n_batch_rollouts", type=int, default=12)
+    parser.add_argument("--n_batch_rollouts", type=int, default=20)
     parser.add_argument("--max_samples", type=int, default=250_000)
     parser.add_argument("--max_iters", type=int, default=50)
     parser.add_argument("--train_frac", type=float, default=0.8)
