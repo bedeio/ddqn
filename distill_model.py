@@ -27,6 +27,7 @@ class Config:
     is_train: bool
     env_name: str
     tree_type: str
+    max_depths: list
 
 def load_teacher(env_name, state_size, action_size):
     qnet = QNetwork(state_size=state_size, action_size=action_size, seed=42)
@@ -63,17 +64,19 @@ def parse_args():
     parser.add_argument("--log_fname", type=str, default='logs/dt.log')
     parser.add_argument("--max_depth", type=int, default=6)
     parser.add_argument("--n_batch_rollouts", type=int, default=20)
-    parser.add_argument("--max_samples", type=int, default=250_000)
+    parser.add_argument("--max_samples", type=int, default=200_000)
     parser.add_argument("--max_iters", type=int, default=50)
     parser.add_argument("--train_frac", type=float, default=0.8)
     parser.add_argument("--is_reweight", type=bool, default=True)
-    parser.add_argument("--n_test_rollouts", type=int, default=50)
+    parser.add_argument("--n_test_rollouts", type=int, default=30)
     parser.add_argument("--save_dirname", type=str, default='models/trees')
     parser.add_argument("--save_fname", type=str, default='linear_dt_policy.pk')
     parser.add_argument("--save_viz_fname", type=str, default='linear_dt_policy.dot')
     parser.add_argument("--is_train", type=bool, default=True)
     parser.add_argument("--env_name", type=str)
     parser.add_argument("--tree_type", type=str)
+    parser.add_argument("--max_depths", type=int, nargs='*', default=[2, 4, 6, 8, 10],
+                        help="List of maximum depths to try for the decision tree. Defaults to [2, 4, 6, 8, 10].")
 
     return parser.parse_args()
 
@@ -89,7 +92,7 @@ def main():
         learn_dt(config)
 
 def generate_data(config):
-    max_depths = [2, 4, 6, 8, 10]
+    max_depths = config.max_depths #[2, 4, 6, 8, 10]
     is_reweight_options = [True, False]
     tree_types = ['decision_tree', 'linear_tree_ridge', 'linear_tree_logistic']
 
