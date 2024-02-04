@@ -20,6 +20,7 @@ class Config:
     train_frac: float
     is_reweight: bool
     n_test_rollouts: int
+    teacher_dir: str
     save_dirname: str
     save_fname: str
     save_viz_fname: str
@@ -29,10 +30,10 @@ class Config:
     max_depths: list
     depth: int
 
-def load_teacher(env_name, state_size, action_size):
+def load_teacher(model_path, state_size, action_size):
     qnet = QNetwork(state_size=state_size, action_size=action_size, seed=42)
     qnet.load_state_dict(
-        torch.load(f'models/checkpoint_{env_name}.pth', map_location=torch.device('cpu')))
+        torch.load(model_path, map_location=torch.device('cpu')))
     
     return qnet
 
@@ -40,7 +41,8 @@ def learn_dt(config: Config):
     print(f"Learning {config.tree_type} with depth {config.depth} and is_reweight {config.is_reweight}")
     # Data structures
     env, state_size, action_size = build_env(config.env_name)
-    teacher = load_teacher(config.env_name, state_size, action_size)
+    teacher_path = os.path.join(config.teacher_dir, f"checkpoint_{config.env_name}.pth")
+    teacher = load_teacher(teacher_path, state_size, action_size)
 
     student = DTPolicy(config.depth, config.tree_type)
 
@@ -69,6 +71,7 @@ def parse_args():
     parser.add_argument("--train_frac", type=float, default=0.8)
     parser.add_argument("--is_reweight", type=bool, default=True)
     parser.add_argument("--n_test_rollouts", type=int, default=30)
+    parser.add_argument("--teacher_dir", type=str, default='models')
     parser.add_argument("--save_dirname", type=str, default='models/trees')
     parser.add_argument("--save_fname", type=str, default='linear_dt_policy.pk')
     parser.add_argument("--save_viz_fname", type=str, default='linear_dt_policy.dot')

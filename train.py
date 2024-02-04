@@ -2,15 +2,13 @@ import gymnasium as gym
 import os
 import sys
 import torch
-import torch.optim as optim
 import torch.nn.functional as F
 
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import deque
 from agent import Agent, Config
-from gymnasium.envs.registration import register
-from env.windy_cartpole_env import WindyCartPole
+import env
 
 # For visualization
 from gymnasium.wrappers import transform_observation as to
@@ -149,16 +147,7 @@ def select_config(env_name, configs):
 
 
 def build_env(env_name, **kwargs):
-    if env_name == "WindyCartPole-v1":
-        register(
-            id='WindyCartPole-v1',
-            entry_point='env.windy_cartpole_env:WindyCartPole',
-            max_episode_steps=2500,
-            reward_threshold=500,
-        )
-        env = gym.make(env_name, **kwargs)
-    else:
-        env = gym.make(env_name, **kwargs)
+    env = gym.make(env_name, **kwargs)
     
     state_size, action_size = get_env_params(env)
     
