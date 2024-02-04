@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from collections import deque
 from agent import Agent, Config
+from gymnasium.envs.registration import register
+from env.windy_cartpole_env import WindyCartPole
 
 # For visualization
 from gymnasium.wrappers import transform_observation as to
@@ -22,7 +24,7 @@ def save_model(agent, env_name, models_dir='models'):
 
     torch.save(agent.qnetwork_local.state_dict(), f'{models_dir}/checkpoint_{env_name}.pth')
 
-def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=500, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
+def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=2500, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
     scores = []
     episodes_list = []
     score_avg_list = []
@@ -35,11 +37,11 @@ def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=500, eps_start=
         score = 0
         for t in range(max_t):
             action = agent.act(state, eps)
-            next_state, reward, done, terminated, *extra_vars = env.step(action)
-            agent.step(state, action, reward, next_state, done)
+            next_state, reward, terminated, truncated, *extra_vars = env.step(action)
+            agent.step(state, action, reward, next_state, terminated or truncated)
             state = next_state
             score += reward
-            if done or terminated:
+            if terminated or truncated:
                 break
 
         scores_window.append(score)
@@ -146,8 +148,18 @@ def select_config(env_name, configs):
     raise ValueError(f"No configuration found for environment: {env_name}")
 
 
-def build_env(env_name):
-    env = gym.make(env_name)
+def build_env(env_name, **kwargs):
+    if env_name == "WindyCartPole-v1":
+        register(
+            id='WindyCartPole-v1',
+            entry_point='env.windy_cartpole_env:WindyCartPole',
+            max_episode_steps=2500,
+            reward_threshold=500,
+        )
+        env = gym.make(env_name, **kwargs)
+    else:
+        env = gym.make(env_name, **kwargs)
+    
     state_size, action_size = get_env_params(env)
     
     if env_name.startswith("Taxi"):
@@ -157,17 +169,19 @@ def build_env(env_name):
     return env, state_size, action_size
 
 agent_configs = {
-    "CartPole": Config(DDQN=True, BUFFER_SIZE=int(5e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
+    "WindyCartPole": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
+    "CartPole": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
     "LunarLander": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-3, UPDATE_EVERY=4, LOSS=F.smooth_l1_loss),
-    "Taxi": Config(DDQN=True, BUFFER_SIZE=int(5e5), BATCH_SIZE=512, GAMMA=0.9, TAU=1e-2, LR=4e-3, UPDATE_EVERY=4, LOSS=F.mse_loss)
+    "Taxi": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.98, TAU=1e-2, LR=4e-3, UPDATE_EVERY=4, LOSS=F.mse_loss)
 }
 
 solved_scores = {
     # https://github.com/openai/gym/wiki/Leaderboard
     # https://gymnasium.farama.org/environments/box2d/lunar_lander/#rewards
-    "CartPole": 195,
+    "WindyCartPole": 400,
+    "CartPole": 400,
     "LunarLander": 250, 
-    "Taxi": 8
+    "Taxi": 8.5
 }
 
 # Options: 'LunarLander-v2', 'Taxi-v3', 'CartPole-v1'

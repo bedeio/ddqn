@@ -14,7 +14,6 @@ from train import build_env
 @dataclass
 class Config:
     log_fname: str
-    max_depth: int
     n_batch_rollouts: int
     max_samples: int
     max_iters: int
@@ -28,6 +27,7 @@ class Config:
     env_name: str
     tree_type: str
     max_depths: list
+    depth: int
 
 def load_teacher(env_name, state_size, action_size):
     qnet = QNetwork(state_size=state_size, action_size=action_size, seed=42)
@@ -37,12 +37,12 @@ def load_teacher(env_name, state_size, action_size):
     return qnet
 
 def learn_dt(config: Config):
-    print(f"Learning {config.tree_type} with depth {config.max_depth} and is_reweight {config.is_reweight}")
+    print(f"Learning {config.tree_type} with depth {config.depth} and is_reweight {config.is_reweight}")
     # Data structures
     env, state_size, action_size = build_env(config.env_name)
     teacher = load_teacher(config.env_name, state_size, action_size)
 
-    student = DTPolicy(config.max_depth, config.tree_type)
+    student = DTPolicy(config.depth, config.tree_type)
 
     # Train student
     if config.is_train:
@@ -62,7 +62,7 @@ def learn_dt(config: Config):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train and test a decision tree policy.")
     parser.add_argument("--log_fname", type=str, default='logs/dt.log')
-    parser.add_argument("--max_depth", type=int, default=6)
+    parser.add_argument("--depth", type=int, default=4)
     parser.add_argument("--n_batch_rollouts", type=int, default=20)
     parser.add_argument("--max_samples", type=int, default=200_000)
     parser.add_argument("--max_iters", type=int, default=50)
@@ -75,7 +75,7 @@ def parse_args():
     parser.add_argument("--is_train", type=bool, default=True)
     parser.add_argument("--env_name", type=str)
     parser.add_argument("--tree_type", type=str)
-    parser.add_argument("--max_depths", type=int, nargs='*', default=[2, 4, 6, 8, 10],
+    parser.add_argument("--max_depths", type=int, nargs='*', default=[1, 2, 4, 6, 8],
                         help="List of maximum depths to try for the decision tree. Defaults to [2, 4, 6, 8, 10].")
 
     return parser.parse_args()
@@ -92,7 +92,7 @@ def main():
         learn_dt(config)
 
 def generate_data(config):
-    max_depths = config.max_depths #[2, 4, 6, 8, 10]
+    max_depths = config.max_depths #[1,2, 4, 6, 8]
     is_reweight_options = [True, False]
     tree_types = ['decision_tree', 'linear_tree_ridge', 'linear_tree_logistic']
 
@@ -100,14 +100,14 @@ def generate_data(config):
     total_combinations = len(all_combinations)
     results = []
 
-    for idx, (max_depth, is_reweight, tree_type) in enumerate(all_combinations, start=1):
-        file_name_suffix = f"{tree_type}_depth{max_depth}_reweight{is_reweight}"
+    for idx, (depth, is_reweight, tree_type) in enumerate(all_combinations, start=1):
+        file_name_suffix = f"{tree_type}_depth{depth}_reweight{is_reweight}"
         save_fname = f"dt_policy_{config.env_name}_{file_name_suffix}.pk"
         save_viz_fname = f"dt_policy_{config.env_name}_{file_name_suffix}.dot"
 
         modified_config_dict = vars(config).copy()
         modified_config_dict.update({
-            'max_depth': max_depth,
+            'depth': depth,
             'is_reweight': is_reweight,
             'tree_type': tree_type,
             'save_fname': save_fname,
@@ -117,14 +117,14 @@ def generate_data(config):
         config = Config(**modified_config_dict)
         fpath = f"{config.save_dirname}/{save_fname}"
         if os.path.exists(fpath):
-            print(f"Skipping {config.tree_type} with max_depth={config.max_depth} and reweight={config.is_reweight} ")
+            print(f"Skipping {config.tree_type} with depth={config.depth} and reweight={config.is_reweight} ")
             continue
 
         rew = learn_dt(config)
 
         # Append results
         results.append({
-            'max_depth': max_depth,
+            'depth': depth,
             'is_reweight': is_reweight,
             'tree_type': tree_type,
             'reward': rew
@@ -139,7 +139,7 @@ def generate_data(config):
 
     # Export results to a CSV file
     with open(f'csv/dt_policy_results_{config.env_name}.csv', mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=['max_depth', 'is_reweight', 'tree_type', 'reward'])
+        writer = csv.DictWriter(file, fieldnames=['depth', 'is_reweight', 'tree_type', 'reward'])
         writer.writeheader()
         writer.writerows(results)
 
