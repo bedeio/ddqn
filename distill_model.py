@@ -67,7 +67,7 @@ def parse_args():
     parser.add_argument("--depth", type=int, default=4)
     parser.add_argument("--n_batch_rollouts", type=int, default=20)
     parser.add_argument("--max_samples", type=int, default=200_000)
-    parser.add_argument("--max_iters", type=int, default=50)
+    parser.add_argument("--max_iters", type=int, default=15)
     parser.add_argument("--train_frac", type=float, default=0.8)
     parser.add_argument("--is_reweight", type=bool, default=True)
     parser.add_argument("--n_test_rollouts", type=int, default=30)

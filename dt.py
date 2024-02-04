@@ -35,16 +35,11 @@ def custom_softmax(x):
 
 class BarebonesLogisticRegression(LogisticRegression):
     def predict(self, X):
-        if X.ndim == 1 or X.shape[0] == 1:
-            return np.argmax(np.dot(self.coef_, X[0]) + self.intercept_)
-        else:
-            return super().predict(X)
+        scores = np.dot(self.coef_, X[0]) + self.intercept_
+        indices = np.argmax(scores, axis=0)
 
-    def predict_proba(self, X):
-        if X.ndim == 1 or X.shape[0] == 1:
-            return custom_softmax(np.dot(self.coef_, X[0]) + self.intercept_)
-        else:
-            return super().predict_proba(X)
+        return np.take(self.classes_, indices, axis=0)
+
 
 
 def accuracy(policy, obss, acts):

@@ -1,4 +1,5 @@
 import argparse
+import csv
 import torch
 import numpy as np
 import os
@@ -37,13 +38,13 @@ def test_model(policy, env, n_runs=20):
     return average_score, average_time
 
 
-def extract_params_from_filenames(filename):
+def extract_params_from_filename(filename):
     tree_prefix = "dt_policy_"
     if filename.startswith(tree_prefix):
         info = filename.removeprefix(tree_prefix).rsplit('.', 1)[0]
         parts = info.split('_')
 
-        env_name = parts[0]
+        # env_name = parts[0]
         # Exclude the first (env_name) and the last two parts (depth and reweight)
         tree_type_parts = parts[1:-2]
         tree_type = '_'.join(tree_type_parts)
@@ -53,31 +54,44 @@ def extract_params_from_filenames(filename):
         max_depth = int(depth_part.replace('depth', ''))
         is_reweight = reweight_part.endswith('True')
 
-        return env_name, tree_type, max_depth, is_reweight
+        return tree_type, max_depth, is_reweight
 
-    return None
+    return None, None, None
 
 
-def _checkpoint_paths(args):
+def _teacher_paths(args):
+    # Initialize a dictionary to hold the paths for each environment
+    env_paths = {env: '' for env in args.env_names}
+
     for env in args.env_names:
-        if env == "WindyCartPole-v1":
-            env = "CartPole-v1"
-        yield f'{args.model_directory}/checkpoint_{env}.pth'
+        mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
+        path = f'{args.model_directory}/checkpoint_{mapped_env}.pth'
+        env_paths[env] = path
+
+    return env_paths
 
 
 def _student_paths(args):
-    return ["models/trees/linear_dt_policy.pk"]
-    # for env in args.env_names:
-    #     env = "CartPole-v1" if env == "WindyCartPole-v1" else env
-    #     for file in os.listdir(f'{args.model_directory}/trees'):
-    #         if file.endswith('.pk') and file.startswith('dt_policy') and env in file:
-    #             yield f'{args.model_directory}/trees/{file}'
+    # Initialize a dictionary to hold the paths for each environment
+    env_paths = {env: [] for env in args.env_names}
 
+    for env in args.env_names:
+        mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
+        for file in os.listdir(f'{args.model_directory}/trees'):
+            if file.endswith('.pk') and file.startswith('dt_policy') and mapped_env in file:
+                full_path = f'{args.model_directory}/trees/{file}'
+                env_paths[env].append(full_path)
+
+    return env_paths
+
+def _merge_paths(teacher_paths, student_paths):
+    return {env: [teacher_path] + student_paths.get(env, [])
+            for env, teacher_path in teacher_paths.items()}
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Script to load models for different environments.")
-    parser.add_argument('--env_names', type=str, nargs='+', default=['Taxi-v3'],
+    parser.add_argument('--env_names', type=str, nargs='+', default=['CartPole-v1', 'LunarLander-v2', 'Taxi-v3'],
                         help='Name of the environment. Defaults to all envs.')
     parser.add_argument('--model_type', type=str, choices=['student', 'teacher', 'all'], required=True,
                         help='Type of the model: student or teacher.')
@@ -85,8 +99,8 @@ def parse_args():
                         required=False, default="models", help="Model directory")
     args = parser.parse_args()
 
-    teacher_paths = list(_checkpoint_paths(args))
-    student_paths = list(_student_paths(args))
+    teacher_paths = _teacher_paths(args)
+    student_paths = _student_paths(args)
 
     match args.model_type:
         case 'teacher':
@@ -94,7 +108,7 @@ def parse_args():
         case 'student':
             args.model_paths = student_paths
         case 'all':
-            args.model_paths = teacher_paths + student_paths
+            args.model_paths = _merge_paths(teacher_paths, student_paths)
 
     return args
 
@@ -104,8 +118,9 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for env_name in args.env_names:
-        print(f"=== Testing env {env_name} ===")
-        for model_path in args.model_paths:
+        rows = []
+        for model_path in args.model_paths[env_name]:
+            print("-- Path:", model_path)
             env, state_size, action_size = build_env(env_name)
 
             dirname = os.path.dirname(model_path)
@@ -114,15 +129,24 @@ if __name__ == '__main__':
                 model = load_dt_policy(dirname, filename)
             else:
                 model = load_teacher(model_path, state_size, action_size)
+                model_type = "DDQN"
 
             print(f"- {model_path} -")
-            test_scores, test_times = test_model(model, env)
+            scores, times = test_model(model, env)
 
-            print(f"Average Score: {np.mean(test_scores)}")
-            print(f"Average Prediction Time: {np.mean(test_times)}")
+            # model_type, depth, is_reweight, env, scores, task
+            # row.append([filename, soce])
+            tree_type, max_depth, is_reweight = extract_params_from_filename(filename)
+            if tree_type:
+                model_type = tree_type
 
-    # Export results to a CSV file
-    # with open(f'csv/dt_policy_results_{config.env_name}.csv', mode='w', newline='') as file:
-    #     writer = csv.DictWriter(file, fieldnames=['depth', 'is_reweight', 'tree_type', 'reward'])
-    #     writer.writeheader()
-    #     writer.writerows(results)
+            # ["model_type", "max_depth", "is_reweight", "avg_reward", "avg_time"]
+            rows.append([model_type, max_depth, is_reweight, scores, times])
+            print(f"Average Score: {scores}")
+            print(f"Average Prediction Time: {times}")
+
+        # Export results to a CSV file
+        with open(f'output.csv', mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["model_type", "max_depth", "is_reweight", "avg_reward", "avg_time"])
+            writer.writerows(rows)
