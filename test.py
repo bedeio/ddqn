@@ -61,26 +61,27 @@ def extract_params_from_filename(filename):
 
 def _teacher_paths(args):
     # Initialize a dictionary to hold the paths for each environment
-    env_paths = {env: '' for env in args.env_names}
+    env_paths = {env: [] for env in args.env_names}
 
     for env in args.env_names:
         mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
         path = f'{args.model_directory}/checkpoint_{mapped_env}.pth'
-        env_paths[env] = path
+        env_paths[env].append(path)
 
     return env_paths
 
 
 def _student_paths(args):
     # Initialize a dictionary to hold the paths for each environment
-    env_paths = {env: [] for env in args.env_names}
+    env_paths = {env: ["models/trees/linear_dt_policy.pk"] for env in args.env_names}
+    # env_paths = {env: [] for env in args.env_names}
 
-    for env in args.env_names:
-        mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
-        for file in os.listdir(f'{args.model_directory}/trees'):
-            if file.endswith('.pk') and file.startswith('dt_policy') and mapped_env in file:
-                full_path = f'{args.model_directory}/trees/{file}'
-                env_paths[env].append(full_path)
+    # for env in args.env_names:
+    #     mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
+    #     for file in os.listdir(f'{args.model_directory}/trees'):
+    #         if file.endswith('.pk') and file.startswith('dt_policy') and mapped_env in file:
+    #             full_path = f'{args.model_directory}/trees/{file}'
+    #             env_paths[env].append(full_path)
 
     return env_paths
 
@@ -91,7 +92,7 @@ def _merge_paths(teacher_paths, student_paths):
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Script to load models for different environments.")
-    parser.add_argument('--env_names', type=str, nargs='+', default=['CartPole-v1', 'LunarLander-v2', 'Taxi-v3'],
+    parser.add_argument('--env_names', type=str, nargs='+', default=['Taxi-v3'],
                         help='Name of the environment. Defaults to all envs.')
     parser.add_argument('--model_type', type=str, choices=['student', 'teacher', 'all'], required=True,
                         help='Type of the model: student or teacher.')
@@ -127,6 +128,7 @@ if __name__ == '__main__':
             filename = os.path.basename(model_path)
             if filename.startswith("dt_policy") or filename.startswith("linear_dt_policy"):
                 model = load_dt_policy(dirname, filename)
+                model_type = "NA"
             else:
                 model = load_teacher(model_path, state_size, action_size)
                 model_type = "DDQN"
