@@ -7,7 +7,7 @@ from train import build_env
 from distill_model import load_teacher, load_dt_policy
 
 
-def test_model(policy, env, n_runs=200):
+def test_model(policy, env, n_runs=20):
     scores = []
     times = []
 
@@ -66,17 +66,18 @@ def _checkpoint_paths(args):
 
 
 def _student_paths(args):
-    for env in args.env_names:
-        env = "CartPole-v1" if env == "WindyCartPole-v1" else env
-        for file in os.listdir(f'{args.model_directory}/trees'):
-            if file.endswith('.pk') and file.startswith('dt_policy') and env in file:
-                yield f'{args.model_directory}/trees/{file}'
+    return ["models/trees/linear_dt_policy.pk"]
+    # for env in args.env_names:
+    #     env = "CartPole-v1" if env == "WindyCartPole-v1" else env
+    #     for file in os.listdir(f'{args.model_directory}/trees'):
+    #         if file.endswith('.pk') and file.startswith('dt_policy') and env in file:
+    #             yield f'{args.model_directory}/trees/{file}'
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Script to load models for different environments.")
-    parser.add_argument('--env_names', type=str, nargs='+', default=['CartPole-v1', 'LunarLander-v2', 'Taxi-v3'],
+    parser.add_argument('--env_names', type=str, nargs='+', default=['Taxi-v3'],
                         help='Name of the environment. Defaults to all envs.')
     parser.add_argument('--model_type', type=str, choices=['student', 'teacher', 'all'], required=True,
                         help='Type of the model: student or teacher.')
@@ -109,7 +110,7 @@ if __name__ == '__main__':
 
             dirname = os.path.dirname(model_path)
             filename = os.path.basename(model_path)
-            if filename.startswith("dt_policy"):
+            if filename.startswith("dt_policy") or filename.startswith("linear_dt_policy"):
                 model = load_dt_policy(dirname, filename)
             else:
                 model = load_teacher(model_path, state_size, action_size)

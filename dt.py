@@ -27,6 +27,26 @@ from lightgbm import LGBMClassifier
 
 log = print
 
+def custom_softmax(x):
+    z = x - max(x)
+    numerator = np.exp(z)
+    denominator = np.sum(numerator)
+    return numerator / denominator
+
+class BarebonesLogisticRegression(LogisticRegression):
+    def predict(self, X):
+        if X.ndim == 1 or X.shape[0] == 1:
+            return np.argmax(np.dot(self.coef_, X[0]) + self.intercept_)
+        else:
+            return super().predict(X)
+
+    def predict_proba(self, X):
+        if X.ndim == 1 or X.shape[0] == 1:
+            return custom_softmax(np.dot(self.coef_, X[0]) + self.intercept_)
+        else:
+            return super().predict_proba(X)
+
+
 def accuracy(policy, obss, acts):
     return np.mean(acts == policy.predict(obss))
 
@@ -67,7 +87,7 @@ class DTPolicy:
             case 'decision_tree':
                 self.tree = DecisionTreeClassifier(max_depth=self.max_depth, ccp_alpha=0.005)
             case 'linear_tree_logistic':
-                self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=LogisticRegression(max_iter=350, solver='liblinear'), criterion='crossentropy')
+                self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=BarebonesLogisticRegression(max_iter=350, solver='liblinear'), criterion='crossentropy')
             case 'linear_tree_ridge':
                 self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=RidgeClassifier(max_iter=250), criterion='hamming')
             case 'lightgbm_linear':
