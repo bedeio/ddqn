@@ -68,25 +68,24 @@ def _teacher_paths(args):
         path = f'{args.model_directory}/checkpoint_{mapped_env}.pth'
         env_paths[env].append(path)
 
+    print(env_paths)
     return env_paths
 
 
 def _student_paths(args):
-    # Initialize a dictionary to hold the paths for each environment
-    env_paths = {env: ["models/trees/linear_dt_policy.pk"] for env in args.env_names}
-    # env_paths = {env: [] for env in args.env_names}
+    env_paths = {env: [] for env in args.env_names}
 
-    # for env in args.env_names:
-    #     mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
-    #     for file in os.listdir(f'{args.model_directory}/trees'):
-    #         if file.endswith('.pk') and file.startswith('dt_policy') and mapped_env in file:
-    #             full_path = f'{args.model_directory}/trees/{file}'
-    #             env_paths[env].append(full_path)
+    for env in args.env_names:
+        mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
+        for file in os.listdir(f'{args.model_directory}/trees'):
+            if file.endswith('.pk') and file.startswith('dt_policy') and mapped_env in file:
+                full_path = f'{args.model_directory}/trees/{file}'
+                env_paths[env].append(full_path)
 
     return env_paths
 
 def _merge_paths(teacher_paths, student_paths):
-    return {env: [teacher_path] + student_paths.get(env, [])
+    return {env: teacher_path + student_paths.get(env, [])
             for env, teacher_path in teacher_paths.items()}
 
 def parse_args():
@@ -120,6 +119,7 @@ if __name__ == '__main__':
 
     for env_name in args.env_names:
         rows = []
+        print(args.model_paths[env_name])
         for model_path in args.model_paths[env_name]:
             print("-- Path:", model_path)
             env, state_size, action_size = build_env(env_name)
@@ -136,8 +136,6 @@ if __name__ == '__main__':
             print(f"- {model_path} -")
             scores, times = test_model(model, env)
 
-            # model_type, depth, is_reweight, env, scores, task
-            # row.append([filename, soce])
             tree_type, max_depth, is_reweight = extract_params_from_filename(filename)
             if tree_type:
                 model_type = tree_type
