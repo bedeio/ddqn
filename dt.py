@@ -34,18 +34,17 @@ def custom_softmax(x):
     return numerator / denominator
 
 class BarebonesLogisticRegression(LogisticRegression):
-    pass
-    # def predict(self, X):
-    #     if X.shape[0] == 1:
-    #         scores = np.dot(self.coef_, X[0]) + self.intercept_
-    #         if len(scores) == 1:   
-    #             indices = (scores > 0).astype(int)
-    #         else:
-    #             indices = np.argmax(scores, axis=0)
+    def predict(self, X):
+        if X.shape[0] == 1:
+            scores = np.dot(self.coef_, X[0]) + self.intercept_
+            if len(scores) == 1:   
+                indices = (scores > 0).astype(int)
+            else:
+                indices = np.argmax(scores, axis=0)
 
-    #         return np.array(np.take(self.classes_, indices, axis=0))
-    #     else:
-    #         return super().predict(X)
+            return np.array(np.take(self.classes_, indices, axis=0))
+        else:
+            return super().predict(X)
 
 
 

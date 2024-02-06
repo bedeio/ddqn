@@ -8,7 +8,7 @@ from train import build_env
 from distill_model import load_teacher, load_dt_policy
 
 
-def test_model(policy, env, n_runs=20):
+def test_model(policy, env, n_runs=250):
     scores = []
     times = []
 
@@ -91,7 +91,7 @@ def _merge_paths(teacher_paths, student_paths):
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Script to load models for different environments.")
-    parser.add_argument('--env_names', type=str, nargs='+', default=['Taxi-v3'],
+    parser.add_argument('--env_names', type=str, nargs='+', default=['LunarLander-v2'],
                         help='Name of the environment. Defaults to all envs.')
     parser.add_argument('--model_type', type=str, choices=['student', 'teacher', 'all'], required=True,
                         help='Type of the model: student or teacher.')
