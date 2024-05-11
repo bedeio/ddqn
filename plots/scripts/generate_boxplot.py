@@ -24,8 +24,8 @@ def compare_all():
     env = gym.make(
         'LunarLander-v2',
         enable_wind=True,
-        wind_power=15.0,
-        turbulence_power=1.5
+        wind_power=20.0,
+        turbulence_power=2.0
     )
     n = 1000
 

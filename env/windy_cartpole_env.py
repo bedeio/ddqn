@@ -4,8 +4,9 @@ from gymnasium.envs.classic_control import CartPoleEnv
 
 class WindyCartPole(CartPoleEnv):
     def __init__(self, *args, **kwargs):
-        super(WindyCartPole, self).__init__(*args, **kwargs)
-        self.wind_force = kwargs.get('wind_force', 0)
+        super(WindyCartPole, self).__init__(*args)
+        self.wind_force = kwargs.get('wind_force', 0) # should be between 0-1
+        self.turbulence_power = kwargs.get('turbulence_power', 0) # should be between 0-0.1
         self.inner_timer = 0
 
     # take from https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/envs/classic_control/cartpole.py
@@ -50,6 +51,10 @@ class WindyCartPole(CartPoleEnv):
             x = x + self.tau * x_dot
             theta_dot = theta_dot + self.tau * thetaacc
             theta = theta + self.tau * theta_dot
+
+        if self.turbulence_power > 0:
+            wind = np.random.uniform(-self.turbulence_power, self.turbulence_power)
+            theta_dot += wind
 
         self.state = (x, x_dot, theta, theta_dot)
 

@@ -65,12 +65,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train and test a decision tree policy.")
     parser.add_argument("--log_fname", type=str, default='logs/dt.log')
     parser.add_argument("--depth", type=int, default=4)
-    parser.add_argument("--n_batch_rollouts", type=int, default=20)
-    parser.add_argument("--max_samples", type=int, default=200_000)
-    parser.add_argument("--max_iters", type=int, default=55)
+    parser.add_argument("--n_batch_rollouts", type=int, default=50)
+    parser.add_argument("--max_samples", type=int, default=250_000)
+    parser.add_argument("--max_iters", type=int, default=75)
     parser.add_argument("--train_frac", type=float, default=0.8)
     parser.add_argument("--is_reweight", type=bool, default=True)
-    parser.add_argument("--n_test_rollouts", type=int, default=30)
+    parser.add_argument("--n_test_rollouts", type=int, default=50)
     parser.add_argument("--teacher_dir", type=str, default='models')
     parser.add_argument("--save_dirname", type=str, default='models/trees')
     parser.add_argument("--save_fname", type=str, default='linear_dt_policy.pk')
@@ -124,8 +124,6 @@ def generate_data(config):
             continue
 
         rew = learn_dt(config)
-
-        # Append results
         results.append({
             'depth': depth,
             'is_reweight': is_reweight,

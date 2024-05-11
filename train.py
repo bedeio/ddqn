@@ -7,7 +7,8 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import deque
-from agent import Agent, Config
+from agent import Agent
+from config import agent_configs, select_config, solved_scores
 import env
 
 # For visualization
@@ -129,7 +130,7 @@ def decode_state(encoded_state):
     taxi_col = state % 5
     taxi_row = state // 5
     
-    # One-hot encoding
+    # one-hot
     passenger_location_encoded = np.zeros(5)
     passenger_location_encoded[passenger_location] = 1
 
@@ -137,13 +138,6 @@ def decode_state(encoded_state):
     destination_encoded[destination] = 1
 
     return np.concatenate(([taxi_row, taxi_col], passenger_location_encoded, destination_encoded))
-
-def select_config(env_name, configs):
-    for key in configs:
-        if env_name.startswith(key):
-            return configs[key]
-        
-    raise ValueError(f"No configuration found for environment: {env_name}")
 
 
 def build_env(env_name, **kwargs):
@@ -156,22 +150,6 @@ def build_env(env_name, **kwargs):
         env = to.TransformObservation(env, lambda obs: decode_state(obs))
 
     return env, state_size, action_size
-
-agent_configs = {
-    "WindyCartPole": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
-    "CartPole": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
-    "LunarLander": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-3, UPDATE_EVERY=4, LOSS=F.smooth_l1_loss),
-    "Taxi": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.98, TAU=1e-2, LR=4e-3, UPDATE_EVERY=4, LOSS=F.mse_loss)
-}
-
-solved_scores = {
-    # https://github.com/openai/gym/wiki/Leaderboard
-    # https://gymnasium.farama.org/environments/box2d/lunar_lander/#rewards
-    "WindyCartPole": 400,
-    "CartPole": 400,
-    "LunarLander": 250, 
-    "Taxi": 8.5
-}
 
 # Options: 'LunarLander-v2', 'Taxi-v3', 'CartPole-v1'
 # env_name = 'LunarLander-v2'  
