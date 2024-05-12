@@ -5,7 +5,7 @@ from gymnasium.envs.classic_control import CartPoleEnv
 class WindyCartPole(CartPoleEnv):
     def __init__(self, *args, **kwargs):
         super(WindyCartPole, self).__init__(*args)
-        self.wind_force = kwargs.get('wind_force', 0) # should be between 0-1
+        self.wind_power = kwargs.get('wind_power', 0) # should be between 0-1
         self.turbulence_power = kwargs.get('turbulence_power', 0) # should be between 0-0.1
         self.inner_timer = 0
 
@@ -26,7 +26,7 @@ class WindyCartPole(CartPoleEnv):
                 math.sin(0.02 * self.inner_timer)
                 + (math.sin(math.pi * 0.01 * self.inner_timer))
             )
-            * self.wind_force
+            * self.wind_power
         )
         wind_torque = 2.0 * w * self.length * costheta / self.masspole
         self.inner_timer += 1

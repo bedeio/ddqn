@@ -4,15 +4,10 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
-
-# ----------------------------------
-# Define Neural Network Architecture
-# ----------------------------------
 class QNetwork(nn.Module):
-    """Actor (Policy) Model."""
 
     def __init__(self, state_size, action_size, seed):
-        """Initialize parameters and build model.
+        """
         Params
         ======
             state_size (int): Dimension of each state
@@ -29,7 +24,6 @@ class QNetwork(nn.Module):
         return super().load_state_dict(state_dict, strict)
 
     def forward(self, state):
-        """Build a network that maps state -> action values."""
         x = self.fc1(state)
         x = F.relu(x)
         x = self.fc2(x)

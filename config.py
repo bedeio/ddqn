@@ -19,14 +19,18 @@ agent_configs = {
 solved_scores = {
     # https://github.com/openai/gym/wiki/Leaderboard
     # https://gymnasium.farama.org/environments/box2d/lunar_lander/#rewards
-    "WindyCartPole": 400,
-    "CartPole": 400,
+    "WindyCartPole": 500,
+    "CartPole": 500,
     "LunarLander": 250, 
     "Taxi": 8.5
 }
 
 robust_kwargs = {
     "WindyCartPole": [
+        {
+            "turbulence_power": 0.1,
+            "wind_power": 0.0
+        },
         {
             "turbulence_power": 0.1,
             "wind_power": 0.2
