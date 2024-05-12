@@ -79,7 +79,7 @@ def _student_paths(args):
 
     for env in args.env_names:
         mapped_env = "CartPole-v1" if env == "WindyCartPole-v1" else env
-        for file in os.listdir(f'{args.model_directory}/trees'):
+        for file in sorted(os.listdir(f'{args.model_directory}/trees')):
             if file.endswith('.pk') and file.startswith('dt_policy') and mapped_env in file:
                 full_path = f'{args.model_directory}/trees/{file}'
                 env_paths[env].append(full_path)
