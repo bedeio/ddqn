@@ -12,7 +12,7 @@ def select_config(env_name, configs, default=None):
 agent_configs = {
     "WindyCartPole": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
     "CartPole": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-4, UPDATE_EVERY=4, LOSS=F.mse_loss),
-    "LunarLander": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-3, UPDATE_EVERY=4, LOSS=F.smooth_l1_loss),
+    "LunarLander": Config(DDQN=False, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.99, TAU=1e-2, LR=1e-3, UPDATE_EVERY=4, LOSS=F.smooth_l1_loss),
     "Taxi": Config(DDQN=True, BUFFER_SIZE=int(7e5), BATCH_SIZE=512, GAMMA=0.98, TAU=1e-2, LR=4e-3, UPDATE_EVERY=4, LOSS=F.mse_loss)
 }
 

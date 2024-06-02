@@ -4,6 +4,8 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
+LAYER_WIDTH = 256
+
 class QNetwork(nn.Module):
 
     def __init__(self, state_size, action_size, seed):
@@ -16,9 +18,9 @@ class QNetwork(nn.Module):
         """
         super(QNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.fc1 = nn.Linear(state_size, 256)
-        self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, action_size)
+        self.fc1 = nn.Linear(state_size, LAYER_WIDTH)
+        self.fc2 = nn.Linear(LAYER_WIDTH, LAYER_WIDTH)
+        self.fc3 = nn.Linear(LAYER_WIDTH, action_size)
 
     def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
         return super().load_state_dict(state_dict, strict)

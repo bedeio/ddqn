@@ -28,7 +28,9 @@ def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=2500, eps_start
     episodes_list = []
     score_avg_list = []
     score_interval_list = []
-    scores_window = deque(maxlen=100) 
+    num_eval = 100
+    window_len = 25
+    scores_window = deque(maxlen=window_len) 
     eps = eps_start
 
     for i_episode in range(1, n_episodes + 1):
@@ -47,25 +49,23 @@ def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=2500, eps_start
         scores.append(score)
         eps = max(eps_end, eps_decay * eps)
         score_avg = 0
+        mean = np.mean(scores_window)
+        print('\r', f'DDQN Training   Episode {i_episode}\tAverage Score (last {window_len} runs): {mean:.2f}', end="")
 
-        print('\r', 'DDQN Training   Episode {}\tAverage Score: {:.2f}'.format(
-            i_episode, np.mean(scores_window)), end="")
-
-        if i_episode % 100 == 0:
-            print('\r', 'DDQN Training   Episode {}\tAverage Score: {:.2f}'.format(
-                i_episode, np.mean(scores_window)), end="")
-            score_avg, score_interval = agent.validation(num_evaluations=30)
+        if i_episode % 20 == 0:
+            print('\r', f'DDQN Training   Episode {i_episode}\tAverage Score (last {window_len} runs): {mean:.2f}', end="")
+            score_avg, score_interval = agent.validation(num_evaluations=num_eval)
             print(
                 f'\tValidation (Min,Avg,Max): \t{score_interval[0]:.2f},\t{score_avg:.2f},\t{score_interval[1]:.2f}')
             episodes_list.append(i_episode)
             score_avg_list.append(score_avg)
             score_interval_list.append(score_interval)
 
-        if score_avg >= max_score:
+        if len(score_avg_list) > 5 and np.mean(score_avg_list[-5:]) >= max_score - 0.1:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(
                 i_episode, np.mean(scores_window)))
 
-            score_avg, score_interval = agent.validation(num_evaluations=30)
+            score_avg, score_interval = agent.validation(num_evaluations=num_eval)
             print(
                 f'\tValidation Min:Avg:Max \t{score_interval[0]:.2f}:\t{score_avg:.2f}:\t{score_interval[1]:.2f}')
             episodes_list.append(i_episode)
@@ -76,8 +76,11 @@ def train_dqn(agent, env_name, max_score, n_episodes=7500, max_t=2500, eps_start
     save_model(agent, env_name)
     return scores, episodes_list, score_avg_list, score_interval_list
 
+def get_model(conf):
+    return "ddqn" if conf.DDQN else "dqn"
 
-def plot_scores(scores, filename='plots/scores_plot.png'):
+def plot_scores(conf, scores):
+    filename=f'plots/{get_model(conf)}_scores_plot.png'
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.plot(np.arange(len(scores)), scores)
@@ -88,7 +91,8 @@ def plot_scores(scores, filename='plots/scores_plot.png'):
     plt.show()
 
 
-def plot_validation_progress(episodes_list, score_avg_list, filename='plots/ddqn_validation_plot.png'):
+def plot_validation_progress(conf, episodes_list, score_avg_list):
+    filename=f'plots/{get_model(conf)}_validation_plot.png'
     plt.plot(episodes_list, score_avg_list, label='Average Score')
     interval_min = [i[0] for i in score_interval_list]
     interval_max = [i[1] for i in score_interval_list]
@@ -165,12 +169,13 @@ if __name__ == '__main__':
         print(f"Environment: {env_name}, State Size: {state_size}, Action Size: {action_size}")
 
         conf = select_config(env_name, agent_configs)
+        print("CONF:", conf)
         agent = Agent(env, state_size=state_size, action_size=action_size, config=conf)
 
         max_score = select_config(env_name, solved_scores)
         scores, episodes_list, score_avg_list, score_interval_list = train_dqn(agent, env_name, max_score)
 
-        # plot_validation_progress(episodes_list, score_avg_list)
-        # plot_scores(scores)
+        plot_validation_progress(conf, episodes_list, score_avg_list)
+        plot_scores(conf, scores)
 
         # show_video_of_model(agent, env_name)`

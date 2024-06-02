@@ -9,7 +9,7 @@ from train import build_env
 from distill_model import load_teacher, load_dt_policy
 
 
-def test_model(policy, env, n_runs=1_000):
+def test_model(policy, env, n_runs=1_500):
     scores = []
     times = []
 
@@ -61,7 +61,7 @@ def extract_params_from_filename(filename):
     return None, None, None
 
 
-def _teacher_paths(args):
+def teacher_paths(args):
     # Initialize a dictionary to hold the paths for each environment
     env_paths = {env: [] for env in args.env_names}
 
@@ -74,7 +74,7 @@ def _teacher_paths(args):
     return env_paths
 
 
-def _student_paths(args):
+def student_paths(args):
     env_paths = {env: [] for env in args.env_names}
 
     for env in args.env_names:
@@ -107,8 +107,8 @@ def parse_args():
     
     args = parser.parse_args()
 
-    teacher_paths = _teacher_paths(args)
-    student_paths = _student_paths(args)
+    teacher_paths = teacher_paths(args)
+    student_paths = student_paths(args)
 
     match args.model_type:
         case 'teacher':

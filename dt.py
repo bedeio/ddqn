@@ -23,7 +23,6 @@ from sklearn.tree import export_graphviz
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import RidgeClassifier, LogisticRegression
 from lineartree import LinearTreeClassifier
-from lightgbm import LGBMClassifier
 
 log = print
 
@@ -86,8 +85,6 @@ class DTPolicy:
                 self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=BarebonesLogisticRegression(max_iter=350, solver='liblinear'), criterion='crossentropy')
             case 'linear_tree_ridge':
                 self.tree = LinearTreeClassifier(max_depth=self.max_depth, base_estimator=RidgeClassifier(max_iter=250), criterion='hamming')
-            case 'lightgbm_linear':
-                self.tree = LGBMClassifier(n_estimators=5, num_leaves=31, verbosity=-1, objective="multiclass")
             case _:
                 raise ValueError("Invalid tree type:", tree_type)
     
