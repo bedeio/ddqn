@@ -2,7 +2,7 @@ import pandas as pd
 
 TOP_N = 2
 # Load the CSV file
-file_path = 'lander_robust_latest.csv'
+file_path = 'cartpole_robust_latest.csv'
 df = pd.read_csv(file_path)
 
 # Function to get the top results for each combination of wind, turbulence, and model_type
@@ -12,7 +12,7 @@ def get_top_n_results(df):
     return df.sort_values(by=['wind_power', 'avg_reward', 'avg_time'], ascending=[True, False, True])
 
 # Apply the function to get the top results
-top_n_results = get_top_n_results(df).drop(['env_name'], axis=1)
+top_n_results = get_top_n_results(df)#.drop(['env_name'], axis=1)
 
 # Save the results to a new CSV file if needed
 top_n_results.to_csv(f'top_{TOP_N}_results_robust.csv', index=False)

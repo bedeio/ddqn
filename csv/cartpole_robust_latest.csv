@@ -1,4 +1,4 @@
-env_name,model_type,max_depth,is_reweight,avg_reward,avg_time,wind_power,turbulence_power
+env_name,model_type,max_depth,is_reweight,avg_reward,avg_time,turbulence_power,wind_power
 WindyCartPole-v1,DDQN,,,296.794,32.202289261238434,0.1,0.1
 WindyCartPole-v1,decision_tree,1,False,14.985,25.49931618284952,0.1,0.1
 WindyCartPole-v1,decision_tree,1,True,41.592,25.109532482208117,0.1,0.1
